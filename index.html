@@ -220,6 +220,23 @@
         </main>
     </div>
 
+    <!-- 自動初始化提示框 (只有管理員第一次會看到) -->
+    <div id="setup-overlay" class="fixed inset-0 bg-stone-900/80 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full space-y-6 custom-shadow">
+            <h3 class="serif text-2xl font-bold text-stone-800 flex items-center gap-2">
+                <i data-lucide="party-popper" class="text-accent"></i> 空間建立成功！
+            </h3>
+            <p class="text-stone-600 text-sm leading-relaxed">
+                這是系統為您家族自動產生的專屬資料庫 ID。<br><br>
+                請點擊複製，並將它貼回原始碼中（約第 282 行）：<br>
+                <code class="bg-stone-100 px-2 py-1 rounded text-rose-500 font-bold block mt-2">const FAMILY_ID = "貼在這裡";</code>
+                <br>重新上傳到 GitHub 後，長輩們就可以無縫同步囉！
+            </p>
+            <input type="text" id="setup-id" readonly class="w-full bg-stone-50 border border-stone-200 rounded-xl p-4 font-mono text-center text-lg font-bold text-stone-800">
+            <button onclick="copySetupId()" class="w-full bg-stone-800 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-stone-700 transition-all">複製 ID</button>
+        </div>
+    </div>
+
     <!-- Toast UI -->
     <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-8 py-3.5 rounded-full text-sm shadow-2xl opacity-0 translate-y-10 transition-all pointer-events-none z-[100] tracking-wider">
         訊息通知
@@ -228,12 +245,15 @@
     <script type="module">
         import Chart from 'https://cdn.jsdelivr.net/npm/chart.js/auto/auto.mjs';
 
-        // --- 1. 配置與初始化 ---
-        const BIN_API = "https://api.jsonbin.io/v3/b";
+        // ==========================================
+        // 🔑 管理員設定區 (長輩不需要動這裡)
+        // 第一次使用請保持為空 ""，系統會自動生成並告訴你貼什麼！
+        // ==========================================
+        const FAMILY_ID = ""; 
         
-        // 🔑 關鍵修改：直接將你的雲端金鑰寫死在這裡！長輩完全不需要設定
-        const FAMILY_BIN_ID = "535b3f65-5e7c-4b8f-9f91-ad7317e004d2";
 
+        // --- 1. 雲端通訊功能 (改用穩定且允許匿名更新的 JSONBlob) ---
+        const BLOB_API = "https://jsonblob.com/api/jsonBlob";
         let records = [];
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -252,11 +272,10 @@
             '薪資': 'briefcase', '投資': 'trending-up', '獎金': 'gift', '副業': 'laptop'
         };
 
-        // --- 2. 雲端通訊功能 ---
-
         async function pushToCloud(data) {
+            if (!FAMILY_ID) return;
             try {
-                await fetch(`${BIN_API}/${FAMILY_BIN_ID}`, {
+                await fetch(`${BLOB_API}/${FAMILY_ID.trim()}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ records: data })
@@ -267,10 +286,9 @@
         }
 
         async function pullFromCloud() {
+            if (!FAMILY_ID) return null;
             try {
-                const res = await fetch(`${BIN_API}/${FAMILY_BIN_ID}/latest`, {
-                    headers: { 'X-Bin-Meta': 'false' }
-                });
+                const res = await fetch(`${BLOB_API}/${FAMILY_ID.trim()}`);
                 if (res.ok) {
                     const data = await res.json();
                     return data.records || [];
@@ -281,7 +299,35 @@
             return null;
         }
 
-        // --- 3. 核心功能綁定 ---
+        // 自動為管理者建立資料庫的精靈
+        async function autoSetupDB() {
+            try {
+                const res = await fetch(BLOB_API, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify({ records: [] })
+                });
+                const location = res.headers.get("Location");
+                if (location) {
+                    const newId = location.split('/').pop();
+                    document.getElementById('setup-overlay').classList.remove('hidden');
+                    document.getElementById('setup-id').value = newId;
+                } else {
+                    alert("無法獲取 ID，請確認您的網路連線或使用無痕模式重試。");
+                }
+            } catch(e) {
+                alert("建立資料庫失敗，請稍後再試。");
+            }
+        }
+
+        window.copySetupId = () => {
+            const input = document.getElementById('setup-id');
+            input.select();
+            document.execCommand('copy');
+            alert("已複製！請去修改原始碼並重新上傳 GitHub。");
+        };
+
+        // --- 2. 核心功能綁定 ---
         
         window.switchTab = (tab) => {
             document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
@@ -322,6 +368,10 @@
 
         // 長輩專用的一鍵同步按鈕
         window.manualSync = async () => {
+            if (!FAMILY_ID) {
+                showToast("尚未設定家族 ID，請聯絡管理員");
+                return;
+            }
             showToast("正在更新資料中...");
             const cloudData = await pullFromCloud();
             if (cloudData !== null) {
@@ -334,6 +384,11 @@
         };
 
         window.handleSave = async () => {
+            if (!FAMILY_ID) {
+                showToast("請先完成初始化設定！");
+                return;
+            }
+
             const amountInput = document.getElementById('input-amount');
             const categoryInput = document.getElementById('input-category');
             const dateInput = document.getElementById('input-date');
@@ -356,9 +411,8 @@
                 createdAt: new Date().toISOString()
             };
 
-            // 新增紀錄並自動推送到雲端
             records.push(newRecord);
-            renderAll(); // 先更新畫面，讓長輩覺得反應很快
+            renderAll(); // 先更新畫面，感覺比較順暢
             showToast("儲存中...");
             
             await pushToCloud(records);
@@ -378,7 +432,7 @@
             showToast("記錄已刪除 ✨");
         };
 
-        // --- 4. 渲染與介面邏輯 ---
+        // --- 3. 渲染與介面邏輯 ---
 
         const populateCategories = () => {
             const select = document.getElementById('input-category');
@@ -521,7 +575,7 @@
             }
         };
 
-        // --- 5. 啟動與初始化 ---
+        // --- 4. 啟動與初始化 ---
 
         const init = async () => {
             const h = new Date().getHours();
@@ -530,18 +584,23 @@
             if (wEl) wEl.textContent = welcomeMsg;
             
             populateCategories();
+            if (window.lucide) window.lucide.createIcons();
 
-            // 直接讀取固定的雲端金鑰，長輩無感
-            showToast("正在載入家族手帳...");
+            // 如果尚未貼上 ID，執行自動配置精靈
+            if (!FAMILY_ID || FAMILY_ID.trim() === "") {
+                await autoSetupDB();
+                return; // 等待使用者填上 ID
+            }
+
+            // 直接讀取固定的雲端資料庫
+            showToast("正在開啟家族手帳...");
             const cloudData = await pullFromCloud();
             if (cloudData !== null) {
                 records = cloudData;
+                renderAll();
             } else {
-                showToast("載入失敗，請檢查網路");
+                showToast("載入失敗，請檢查網路連線");
             }
-
-            if (window.lucide) window.lucide.createIcons();
-            renderAll();
         };
 
         window.onload = init;
