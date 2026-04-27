@@ -247,9 +247,9 @@
 
         // ==========================================
         // 🔑 管理員設定區 (長輩不需要動這裡)
-        // 第一次使用請保持為空 ""，系統會自動生成並告訴你貼什麼！
+        // 將你產生的金鑰貼在下方引號內
         // ==========================================
-        const FAMILY_ID = ""; 
+        const FAMILY_ID = "535b3f65-5e7c-4b8f-9f91-ad7317e004d2"; 
         
 
         // --- 1. 雲端通訊功能 (改用穩定且允許匿名更新的 JSONBlob) ---
@@ -277,18 +277,32 @@
             try {
                 await fetch(`${BLOB_API}/${FAMILY_ID.trim()}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json' 
+                    },
                     body: JSON.stringify({ records: data })
                 });
             } catch (e) {
                 console.error("同步儲存失敗", e);
+                throw e; // 拋出錯誤以便處理
             }
         }
 
         async function pullFromCloud() {
             if (!FAMILY_ID) return null;
             try {
-                const res = await fetch(`${BLOB_API}/${FAMILY_ID.trim()}`);
+                // [關鍵修復] 加入快取破壞參數 (?_t=...) 以及快取控制，避免瀏覽器讀取到舊的暫存資料
+                const res = await fetch(`${BLOB_API}/${FAMILY_ID.trim()}?_t=${new Date().getTime()}`, {
+                    method: 'GET',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    cache: 'no-store'
+                });
                 if (res.ok) {
                     const data = await res.json();
                     return data.records || [];
@@ -376,6 +390,7 @@
             const cloudData = await pullFromCloud();
             if (cloudData !== null) {
                 records = cloudData;
+                localStorage.setItem('family_ledger_backup', JSON.stringify(records)); // 備份到本地
                 renderAll();
                 showToast("資料已是最新狀態 ✨");
             } else {
@@ -411,12 +426,19 @@
                 createdAt: new Date().toISOString()
             };
 
+            // 雙重保險：先儲存到本地，就算網路突然斷線也看得到
             records.push(newRecord);
-            renderAll(); // 先更新畫面，感覺比較順暢
-            showToast("儲存中...");
+            localStorage.setItem('family_ledger_backup', JSON.stringify(records));
             
-            await pushToCloud(records);
-            showToast("記錄成功！已自動同步 ✨");
+            renderAll(); // 先更新畫面
+            showToast("同步中...");
+            
+            try {
+                await pushToCloud(records);
+                showToast("記錄成功！已自動同步 ✨");
+            } catch (e) {
+                showToast("網路異常，已暫存於本地");
+            }
 
             amountInput.value = '';
             noteInput.value = '';
@@ -427,9 +449,15 @@
             if (!confirm('要從手帳中擦除這筆紀錄嗎？')) return;
             records = records.filter(r => r.id !== id);
             
+            localStorage.setItem('family_ledger_backup', JSON.stringify(records)); // 更新本地備份
             renderAll();
-            await pushToCloud(records);
-            showToast("記錄已刪除 ✨");
+
+            try {
+                await pushToCloud(records);
+                showToast("記錄已刪除 ✨");
+            } catch (e) {
+                showToast("網路異常，請稍後再試");
+            }
         };
 
         // --- 3. 渲染與介面邏輯 ---
@@ -597,9 +625,18 @@
             const cloudData = await pullFromCloud();
             if (cloudData !== null) {
                 records = cloudData;
+                localStorage.setItem('family_ledger_backup', JSON.stringify(records)); // 同步備份到本地
                 renderAll();
             } else {
-                showToast("載入失敗，請檢查網路連線");
+                // 如果抓取失敗，優先顯示本地備份資料，避免顯示空白
+                const backup = localStorage.getItem('family_ledger_backup');
+                if (backup) {
+                    records = JSON.parse(backup);
+                    showToast("網路異常，顯示本地備份資料");
+                    renderAll();
+                } else {
+                    showToast("載入失敗，請檢查網路連線");
+                }
             }
         };
 
