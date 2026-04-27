@@ -220,17 +220,14 @@
         </main>
     </div>
 
-    <!-- 自動初始化提示框 (只有管理員第一次會看到) -->
+    <!-- 自動初始化提示框 -->
     <div id="setup-overlay" class="fixed inset-0 bg-stone-900/80 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-6">
         <div class="bg-white rounded-3xl p-8 max-w-md w-full space-y-6 custom-shadow">
             <h3 class="serif text-2xl font-bold text-stone-800 flex items-center gap-2">
-                <i data-lucide="party-popper" class="text-accent"></i> 空間建立成功！
+                <!-- 標題會由程式動態產生 -->
             </h3>
             <p class="text-stone-600 text-sm leading-relaxed">
-                這是系統為您家族自動產生的專屬資料庫 ID。<br><br>
-                請點擊複製，並將它貼回原始碼中（約第 282 行）：<br>
-                <code class="bg-stone-100 px-2 py-1 rounded text-rose-500 font-bold block mt-2">const FAMILY_ID = "貼在這裡";</code>
-                <br>重新上傳到 GitHub 後，長輩們就可以無縫同步囉！
+                <!-- 內文會由程式動態產生 -->
             </p>
             <input type="text" id="setup-id" readonly class="w-full bg-stone-50 border border-stone-200 rounded-xl p-4 font-mono text-center text-lg font-bold text-stone-800">
             <button onclick="copySetupId()" class="w-full bg-stone-800 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-stone-700 transition-all">複製 ID</button>
@@ -252,8 +249,7 @@
         const FAMILY_ID = ""; 
         
 
-        // --- 1. 雲端通訊功能 (更換為最強防護、不易被阻擋的 KVDB 引擎) ---
-        const KVDB_API = "https://kvdb.io";
+        // --- 1. 雲端通訊功能 (雙引擎穿透版) ---
         let records = [];
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -275,10 +271,22 @@
         async function pushToCloud(data) {
             if (!FAMILY_ID) return;
             try {
-                await fetch(`${KVDB_API}/${FAMILY_ID.trim()}/records`, {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
+                if (FAMILY_ID.startsWith("np_")) {
+                    // 引擎 B (Npoint)
+                    const id = FAMILY_ID.replace("np_", "");
+                    await fetch(`https://api.npoint.io/${id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ records: data })
+                    });
+                } else {
+                    // 引擎 A (JSON Storage)
+                    await fetch(`https://api.jsonstorage.net/v1/json/${FAMILY_ID}?_t=${new Date().getTime()}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ records: data })
+                    });
+                }
             } catch (e) {
                 console.error("同步儲存失敗", e);
                 throw e; 
@@ -288,14 +296,18 @@
         async function pullFromCloud() {
             if (!FAMILY_ID) return null;
             try {
-                // 加入時間戳參數，徹底打破瀏覽器的偷懶快取機制
-                const res = await fetch(`${KVDB_API}/${FAMILY_ID.trim()}/records?_t=${new Date().getTime()}`, {
+                let url = FAMILY_ID.startsWith("np_")
+                    ? `https://api.npoint.io/${FAMILY_ID.replace("np_", "")}?_t=${new Date().getTime()}`
+                    : `https://api.jsonstorage.net/v1/json/${FAMILY_ID}?_t=${new Date().getTime()}`;
+
+                const res = await fetch(url, {
                     method: 'GET',
                     cache: 'no-store'
                 });
+                
                 if (res.ok) {
                     const data = await res.json();
-                    return data || [];
+                    return data.records || [];
                 }
             } catch (e) {
                 console.error("雲端載入失敗", e);
@@ -303,25 +315,61 @@
             return null;
         }
 
-        // 自動為管理者建立資料庫的精靈
+        // 自動為管理者建立資料庫的精靈 (雙引擎備援)
         async function autoSetupDB() {
+            // 嘗試引擎 A: JSON Storage
             try {
-                const res = await fetch(KVDB_API, { method: "POST" });
+                const res = await fetch("https://api.jsonstorage.net/v1/json", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ records: [] })
+                });
                 if (res.ok) {
-                    const newId = await res.text();
-                    document.getElementById('setup-overlay').classList.remove('hidden');
-                    document.getElementById('setup-id').value = newId;
-                } else {
-                    throw new Error("API 發生例外狀況");
+                    const data = await res.json();
+                    const newId = data.uri.split('/').pop();
+                    showSetupSuccess(newId);
+                    return;
                 }
             } catch(e) {
-                // 移除可怕的 alert 視窗，改用漂亮的介面告知被擋住了
-                document.getElementById('setup-overlay').classList.remove('hidden');
-                document.querySelector('#setup-overlay h3').innerHTML = '⚠️ 連線被阻擋了';
-                document.querySelector('#setup-overlay p').innerHTML = '建立專屬空間失敗！<br><br>這通常是因為瀏覽器的<b>廣告阻擋外掛 (AdBlock)</b> 或<b>防毒軟體</b>攔截了連線。<br><br>👉 解決方法：<br>1. 暫時關閉廣告阻擋器。<br>2. 換一個瀏覽器（例如 Edge 或 Safari）。<br>3. 用手機分享 4G 網路再試一次！';
-                document.getElementById('setup-id').style.display = 'none';
-                document.querySelector('#setup-overlay button').style.display = 'none';
+                console.log("引擎 A 被阻擋，啟動引擎 B...");
             }
+
+            // 嘗試引擎 B: Npoint
+            try {
+                const res2 = await fetch("https://api.npoint.io", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ records: [] })
+                });
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    const newId = "np_" + data2.id;
+                    showSetupSuccess(newId);
+                    return;
+                }
+            } catch(e) {
+                // 如果兩個都被擋，顯示終極解法
+                showSetupError();
+            }
+        }
+
+        function showSetupSuccess(newId) {
+            document.getElementById('setup-overlay').classList.remove('hidden');
+            document.querySelector('#setup-overlay h3').innerHTML = '<i data-lucide="party-popper" class="text-accent w-6 h-6"></i> 空間建立成功！';
+            document.querySelector('#setup-overlay p').innerHTML = '這是系統自動為您產生的抗封鎖 ID。<br><br>請點擊複製，並將它貼回原始碼中（約第 282 行）：<br><code class="bg-stone-100 px-2 py-1 rounded text-rose-500 font-bold block mt-2">const FAMILY_ID = "貼在這裡";</code><br>重新上傳到 GitHub 後，長輩們就可以無縫同步囉！';
+            document.getElementById('setup-id').style.display = 'block';
+            document.getElementById('setup-id').value = newId;
+            document.querySelector('#setup-overlay button').style.display = 'block';
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function showSetupError() {
+            document.getElementById('setup-overlay').classList.remove('hidden');
+            document.querySelector('#setup-overlay h3').innerHTML = '🛡️ 電腦防護太嚴格了！';
+            document.querySelector('#setup-overlay p').innerHTML = '這絕對不是你弄壞的，請不要灰心！<br><br>無痕模式還是被擋，代表是你的<b>防毒軟體 (例如 Avast, 卡巴斯基)</b> 或 <b>公司/學校網路</b> 把所有雲端伺服器都強制攔截了。<br><br>👉 <b>最終必殺技</b>：<br>請拿出你的<b>手機</b>（關閉 Wi-Fi，使用 4G/5G 網路），打開這個網址。手機網路沒有這些嚴苛的防毒攔截，一定能成功拿到 ID！拿到後傳回電腦貼上即可。';
+            document.getElementById('setup-id').style.display = 'none';
+            document.querySelector('#setup-overlay button').style.display = 'none';
+            if (window.lucide) window.lucide.createIcons();
         }
 
         window.copySetupId = () => {
