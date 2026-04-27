@@ -1,0 +1,584 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>記帳本</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F6F2;
+  --surface:#FFFFFF;
+  --surface2:#F0EEE8;
+  --border:#E0DDD5;
+  --border2:#C8C5BB;
+  --ink:#1A1917;
+  --muted:#6B6860;
+  --hint:#A09D95;
+  --accent:#1A56DB;
+  --accent-bg:#EBF2FF;
+  --income:#2D7A3F;
+  --income-bg:#EDFAF1;
+  --expense:#C0392B;
+  --expense-bg:#FEF0EE;
+  --r:10px;
+  --r2:14px;
+}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;font-size:15px;line-height:1.6}
+
+/* ─── Layout ─── */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100dvh}
+@media(max-width:768px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* ─── Sidebar ─── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;overflow-y:auto}
+@media(max-width:768px){
+  .sidebar{height:auto;position:static;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:0}
+}
+.logo{padding:1.5rem 1.25rem 1rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:17px;height:17px;stroke:white;stroke-width:2;fill:none}
+.logo-name{font-size:15px;font-weight:700;letter-spacing:-.3px;color:var(--ink)}
+@media(max-width:768px){.logo{padding:.75rem 1rem;border-bottom:none;border-right:1px solid var(--border)}}
+
+.nav{padding:.75rem .75rem;flex:1}
+@media(max-width:768px){.nav{display:flex;padding:.5rem .5rem;gap:4px;flex-shrink:0}}
+.nav-item{display:flex;align-items:center;gap:10px;padding:.6rem .75rem;border-radius:var(--r);cursor:pointer;font-size:14px;color:var(--muted);font-weight:500;transition:background .15s,color .15s;white-space:nowrap}
+.nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.nav-item:hover{background:var(--surface2);color:var(--ink)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent)}
+
+.month-nav{padding:.75rem 1rem;border-top:1px solid var(--border);margin-top:auto}
+@media(max-width:768px){.month-nav{display:flex;align-items:center;padding:.5rem .75rem;border-top:none;border-left:1px solid var(--border);gap:6px;margin-top:0;margin-left:auto;flex-shrink:0}}
+.month-label{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+@media(max-width:768px){.month-label{margin-bottom:0;font-size:13px}}
+.month-btns{display:flex;gap:4px;align-items:center}
+.mb{background:none;border:1px solid var(--border2);border-radius:6px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:13px}
+.mb:hover{background:var(--surface2)}
+.ml{font-size:12px;color:var(--muted);min-width:44px;text-align:center}
+
+/* ─── Main ─── */
+.main{overflow-y:auto;padding:1.5rem}
+@media(max-width:768px){.main{padding:1rem}}
+
+/* ─── Page ─── */
+.page{display:none}
+.page.active{display:block}
+
+/* ─── Cards ─── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem}
+.card+.card{margin-top:.75rem}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:1rem}
+
+/* ─── Summary ─── */
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem}
+@media(max-width:480px){.summary-grid{grid-template-columns:1fr 1fr;}}
+.stat{background:var(--surface2);border-radius:var(--r);padding:.9rem 1rem}
+.stat-label{font-size:11px;color:var(--hint);margin-bottom:3px;font-weight:500}
+.stat-value{font-family:'DM Mono',monospace;font-size:20px;font-weight:500}
+.stat-value.inc{color:var(--income)}
+.stat-value.exp{color:var(--expense)}
+.stat-value.bal{color:var(--accent)}
+@media(max-width:480px){.stat:last-child{grid-column:1/-1}}
+
+/* ─── Bar chart ─── */
+.bar-chart{overflow-x:auto;padding-bottom:.25rem}
+.bars-wrap{display:flex;align-items:flex-end;gap:5px;height:90px;min-width:min-content}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:26px}
+.bar-track{display:flex;align-items:flex-end;gap:2px;height:70px;justify-content:center;width:100%}
+.bar{border-radius:3px 3px 0 0;min-height:2px;width:10px;transition:height .3s}
+.bar.e{background:#E24B4A}.bar.i{background:#639922}
+.bar-d{font-size:9px;color:var(--hint)}
+.bar-legend{display:flex;gap:10px;margin-top:.5rem;font-size:11px;color:var(--muted)}
+.ldot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+
+/* ─── Transactions ─── */
+.tx-item{display:flex;align-items:center;gap:10px;padding:.65rem 0;border-bottom:1px solid var(--border)}
+.tx-item:last-child{border-bottom:none}
+.tx-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.tx-icon.income{background:var(--income-bg)}.tx-icon.expense{background:var(--expense-bg)}
+.tx-info{flex:1;min-width:0}
+.tx-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--hint);margin-top:1px}
+.tx-amt{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;flex-shrink:0}
+.tx-amt.income{color:var(--income)}.tx-amt.expense{color:var(--expense)}
+.tx-del{width:22px;height:22px;border:none;background:none;cursor:pointer;border-radius:5px;color:var(--hint);font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:opacity .15s}
+.tx-item:hover .tx-del{opacity:1}
+.tx-del:hover{background:var(--expense-bg);color:var(--expense)}
+.tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:500;background:var(--accent-bg);color:var(--accent)}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--hint);font-size:14px}
+
+/* ─── Form ─── */
+.form-add{display:grid;gap:.75rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:480px){.form-row{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.fg input,.fg select{padding:8px 10px;font-size:14px;font-family:'Noto Sans TC',sans-serif;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--ink);outline:none;width:100%}
+.fg input:focus,.fg select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface2);padding:3px;border-radius:9px;border:1px solid var(--border)}
+.tt-btn{border:none;border-radius:7px;padding:8px;font-size:14px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:500;background:transparent;color:var(--muted);transition:background .15s,color .15s}
+.tt-btn.active.exp{background:var(--expense-bg);color:var(--expense)}
+.tt-btn.active.inc{background:var(--income-bg);color:var(--income)}
+.btn-primary{width:100%;padding:10px;font-size:14px;font-family:'Noto Sans TC',sans-serif;font-weight:600;border:none;border-radius:9px;background:var(--accent);color:#fff;cursor:pointer}
+.btn-primary:hover{opacity:.9}
+.btn-primary:active{transform:scale(.99)}
+
+/* ─── Pie Chart ─── */
+.pie-wrap{display:grid;grid-template-columns:160px 1fr;gap:1.25rem;align-items:center}
+@media(max-width:480px){.pie-wrap{grid-template-columns:1fr;justify-items:center}}
+.pie-legend{display:flex;flex-direction:column;gap:.4rem}
+.pie-leg-item{display:flex;align-items:center;gap:7px;font-size:13px}
+.pie-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.pie-leg-name{flex:1;color:var(--ink)}
+.pie-leg-pct{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
+canvas{display:block}
+
+/* ─── Budget ─── */
+.budget-grid{display:grid;gap:.6rem}
+.budget-row{display:grid;grid-template-columns:80px 1fr auto 64px;gap:8px;align-items:center}
+@media(max-width:480px){.budget-row{grid-template-columns:70px 1fr 56px}}
+.budget-cat{font-size:13px;font-weight:500}
+.progress-track{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;border-radius:4px;transition:width .4s}
+.budget-pct{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:right}
+.budget-input-row{display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;align-items:end;margin-top:.75rem}
+@media(max-width:480px){.budget-input-row{grid-template-columns:1fr auto}}
+.btn-sm{padding:8px 14px;font-size:13px;font-family:'Noto Sans TC',sans-serif;font-weight:500;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--ink);cursor:pointer}
+.btn-sm:hover{background:var(--border)}
+
+/* ─── Export ─── */
+.export-section{display:flex;flex-direction:column;gap:.75rem}
+.export-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.export-opts{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:480px){.export-opts{grid-template-columns:1fr}}
+.export-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;cursor:pointer;transition:border-color .15s}
+.export-card:hover{border-color:var(--accent)}
+.export-card-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.export-card-desc{font-size:12px;color:var(--muted)}
+
+/* ─── Toast ─── */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:.6rem 1.2rem;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    </div>
+    <span class="logo-name">記帳本</span>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="gotoPage('dashboard',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      總覽
+    </div>
+    <div class="nav-item" onclick="gotoPage('add',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      新增記錄
+    </div>
+    <div class="nav-item" onclick="gotoPage('chart',this)">
+      <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      分類圓餅圖
+    </div>
+    <div class="nav-item" onclick="gotoPage('budget',this)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      預算設定
+    </div>
+    <div class="nav-item" onclick="gotoPage('export',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      匯出資料
+    </div>
+  </nav>
+  <div class="month-nav">
+    <div class="month-label">
+      <span id="sideMonthLabel">月份</span>
+    </div>
+    <div class="month-btns">
+      <button class="mb" onclick="changeMonth(-1)">‹</button>
+      <span class="ml" id="sideMonthShort"></span>
+      <button class="mb" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="summary-grid">
+      <div class="stat"><div class="stat-label">收入</div><div class="stat-value inc" id="dIncome">NT$0</div></div>
+      <div class="stat"><div class="stat-label">支出</div><div class="stat-value exp" id="dExpense">NT$0</div></div>
+      <div class="stat"><div class="stat-label">結餘</div><div class="stat-value bal" id="dBalance">NT$0</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">每日收支</div>
+      <div class="bar-chart"><div class="bars-wrap" id="barChart"></div></div>
+      <div class="bar-legend">
+        <span><span class="ldot" style="background:#E24B4A"></span>支出</span>
+        <span><span class="ldot" style="background:#639922"></span>收入</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:.75rem">
+      <div class="card-title">本月明細</div>
+      <div id="txList"><div class="empty">本月尚無記錄</div></div>
+    </div>
+  </div>
+
+  <!-- Add -->
+  <div class="page" id="page-add">
+    <div class="card">
+      <div class="card-title">新增收支記錄</div>
+      <div class="form-add">
+        <div class="type-toggle">
+          <button class="tt-btn active exp" id="btnExp" onclick="setType('expense')">💸 支出</button>
+          <button class="tt-btn inc" id="btnInc" onclick="setType('income')">💰 收入</button>
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label>項目名稱</label>
+            <input type="text" id="txName" placeholder="例：午餐、薪資">
+          </div>
+          <div class="fg">
+            <label>金額 (NT$)</label>
+            <input type="number" id="txAmt" placeholder="0" min="0" step="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="fg">
+            <label>分類</label>
+            <select id="txCat"></select>
+          </div>
+          <div class="fg">
+            <label>日期</label>
+            <input type="date" id="txDate">
+          </div>
+        </div>
+        <div class="fg">
+          <label>備註（選填）</label>
+          <input type="text" id="txNote" placeholder="備註說明">
+        </div>
+        <button class="btn-primary" onclick="addTx()">新增記錄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="page" id="page-chart">
+    <div class="card">
+      <div class="card-title">支出分類佔比</div>
+      <div class="pie-wrap">
+        <canvas id="pieCanvas" width="150" height="150"></canvas>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">收入分類佔比</div>
+      <div class="pie-wrap">
+        <canvas id="pieIncCanvas" width="150" height="150"></canvas>
+        <div class="pie-legend" id="pieLegendInc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="page" id="page-budget">
+    <div class="card">
+      <div class="card-title">本月預算進度</div>
+      <div class="budget-grid" id="budgetGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">設定分類預算</div>
+      <div class="budget-input-row">
+        <div class="fg">
+          <label>分類</label>
+          <select id="budgetCat"></select>
+        </div>
+        <div class="fg">
+          <label>預算金額 (NT$)</label>
+          <input type="number" id="budgetAmt" placeholder="0" min="0">
+        </div>
+        <button class="btn-sm" onclick="saveBudget()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="page" id="page-export">
+    <div class="card">
+      <div class="card-title">匯出資料</div>
+      <div class="export-section">
+        <p class="export-desc">將你的記帳資料匯出為 CSV 檔案，可用 Excel 或 Google Sheets 開啟。</p>
+        <div class="export-opts">
+          <div class="export-card" onclick="exportCSV('month')">
+            <div class="export-card-title">📅 本月資料</div>
+            <div class="export-card-desc">匯出目前選擇月份的所有記錄</div>
+          </div>
+          <div class="export-card" onclick="exportCSV('all')">
+            <div class="export-card-title">📦 全部資料</div>
+            <div class="export-card-desc">匯出所有月份的完整記錄</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">資料管理</div>
+      <p class="export-desc" style="margin-bottom:.75rem">所有資料儲存於您的瀏覽器本地，不會上傳至任何伺服器。</p>
+      <button class="btn-sm" onclick="clearAll()" style="color:var(--expense);border-color:var(--expense)">清除所有資料</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──
+const CATS_EXP = ['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
+const CATS_INC = ['薪資','獎金','副業','投資','其他'];
+const CAT_ICON = {餐飲:'🍜',交通:'🚌',購物:'🛍',娛樂:'🎮',醫療:'💊',住宿:'🏠',教育:'📚',薪資:'💼',獎金:'🎁',副業:'💻',投資:'📈',其他:'📁'};
+const PIE_COLORS = ['#4E79A7','#F28E2B','#E15759','#76B7B2','#59A14F','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC'];
+
+let txs = JSON.parse(localStorage.getItem('txs')||'[]');
+let budgets = JSON.parse(localStorage.getItem('budgets')||'{}');
+let currentType = 'expense';
+let curY = new Date().getFullYear();
+let curM = new Date().getMonth();
+
+// ── Helpers ──
+const fmt = n => 'NT$' + Math.round(Math.abs(n)).toLocaleString();
+function monthTxs(y,m){return txs.filter(t=>{const d=new Date(t.date);return d.getFullYear()===(y??curY)&&d.getMonth()===(m??curM)})}
+function save(){localStorage.setItem('txs',JSON.stringify(txs));localStorage.setItem('budgets',JSON.stringify(budgets))}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// ── Navigation ──
+function gotoPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  renderAll();
+}
+
+// ── Month nav ──
+function changeMonth(d){
+  curM+=d;
+  if(curM<0){curM=11;curY--}
+  if(curM>11){curM=0;curY++}
+  renderAll();
+}
+
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function updateMonthLabel(){
+  document.getElementById('sideMonthLabel').textContent=curY+'年';
+  document.getElementById('sideMonthShort').textContent=MONTHS[curM];
+}
+
+// ── Type toggle ──
+function setType(t){
+  currentType=t;
+  document.getElementById('btnExp').className='tt-btn'+(t==='expense'?' active exp':'');
+  document.getElementById('btnInc').className='tt-btn'+(t==='income'?' active inc':'');
+  rebuildCatSelect();
+}
+
+function rebuildCatSelect(){
+  const cats=currentType==='expense'?CATS_EXP:CATS_INC;
+  document.getElementById('txCat').innerHTML=cats.map(c=>`<option value="${c}">${CAT_ICON[c]||'📁'} ${c}</option>`).join('');
+}
+
+function rebuildBudgetCatSelect(){
+  document.getElementById('budgetCat').innerHTML=CATS_EXP.map(c=>`<option value="${c}">${CAT_ICON[c]||'📁'} ${c}</option>`).join('');
+}
+
+// ── Add TX ──
+function addTx(){
+  const name=document.getElementById('txName').value.trim();
+  const amt=parseFloat(document.getElementById('txAmt').value);
+  const cat=document.getElementById('txCat').value;
+  const date=document.getElementById('txDate').value;
+  const note=document.getElementById('txNote').value.trim();
+  if(!name||!amt||amt<=0||!date){toast('請填寫名稱、金額及日期');return}
+  txs.push({id:Date.now(),type:currentType,name,amount:amt,cat,date,note});
+  save();
+  document.getElementById('txName').value='';
+  document.getElementById('txAmt').value='';
+  document.getElementById('txNote').value='';
+  toast('✅ 已新增：'+name);
+  renderAll();
+}
+
+function delTx(id){
+  txs=txs.filter(t=>t.id!==id);
+  save();
+  renderAll();
+}
+
+// ── Save Budget ──
+function saveBudget(){
+  const cat=document.getElementById('budgetCat').value;
+  const amt=parseFloat(document.getElementById('budgetAmt').value);
+  if(!cat||!amt||amt<=0){toast('請填寫分類和金額');return}
+  budgets[cat]=amt;
+  save();
+  toast('✅ 預算已儲存');
+  renderBudget();
+}
+
+// ── Clear All ──
+function clearAll(){
+  if(!confirm('確定要清除所有資料嗎？此操作無法復原。'))return;
+  txs=[];budgets={};save();renderAll();toast('已清除所有資料');
+}
+
+// ── Export CSV ──
+function exportCSV(scope){
+  const data=scope==='all'?txs:monthTxs();
+  if(!data.length){toast('沒有資料可匯出');return}
+  const header='日期,類型,名稱,金額,分類,備註';
+  const rows=data.map(t=>[
+    t.date,
+    t.type==='income'?'收入':'支出',
+    '"'+t.name+'"',
+    t.amount,
+    t.cat,
+    '"'+(t.note||'')+'"'
+  ].join(','));
+  const csv='\uFEFF'+header+'\n'+rows.join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='記帳本_'+(scope==='all'?'全部':curY+'_'+(curM+1)+'月')+'.csv';
+  a.click();
+  toast('📥 CSV 已下載');
+}
+
+// ── Render Dashboard ──
+function renderDashboard(){
+  const list=monthTxs();
+  const income=list.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense=list.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=income-expense;
+  document.getElementById('dIncome').textContent=fmt(income);
+  document.getElementById('dExpense').textContent=fmt(expense);
+  const bEl=document.getElementById('dBalance');
+  bEl.textContent=(bal<0?'-':'')+fmt(bal);
+  bEl.className='stat-value '+(bal<0?'exp':'bal');
+
+  // bar chart
+  const days={};
+  list.forEach(t=>{const d=new Date(t.date).getDate();if(!days[d])days[d]={i:0,e:0};days[d][t.type==='income'?'i':'e']+=t.amount});
+  const entries=Object.entries(days).sort((a,b)=>+a[0]-+b[0]);
+  const maxV=Math.max(...entries.map(([,v])=>Math.max(v.i,v.e)),1);
+  const bc=document.getElementById('barChart');
+  if(!entries.length){bc.innerHTML='<div style="padding:1rem;color:var(--hint);font-size:13px">本月尚無資料</div>'}
+  else{
+    bc.innerHTML=entries.map(([d,v])=>`
+      <div class="bar-col">
+        <div class="bar-track">
+          ${v.e?`<div class="bar e" style="height:${Math.round((v.e/maxV)*64)}px"></div>`:''}
+          ${v.i?`<div class="bar i" style="height:${Math.round((v.i/maxV)*64)}px"></div>`:''}
+        </div>
+        <div class="bar-d">${d}</div>
+      </div>`).join('')
+  }
+
+  // tx list
+  const sorted=[...list].sort((a,b)=>b.date.localeCompare(a.date));
+  const txEl=document.getElementById('txList');
+  if(!sorted.length){txEl.innerHTML='<div class="empty">本月尚無記錄<br>點左側「新增記錄」開始記帳</div>';return}
+  txEl.innerHTML=sorted.map(t=>`
+    <div class="tx-item">
+      <div class="tx-icon ${t.type}">${CAT_ICON[t.cat]||'📁'}</div>
+      <div class="tx-info">
+        <div class="tx-name">${t.name}</div>
+        <div class="tx-meta">${t.date}${t.note?' · '+t.note:''} · <span class="tag">${t.cat}</span></div>
+      </div>
+      <div class="tx-amt ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+      <button class="tx-del" onclick="delTx(${t.id})">✕</button>
+    </div>`).join('');
+}
+
+// ── Render Pie ──
+function drawPie(canvasId,legendId,data){
+  const canvas=document.getElementById(canvasId);
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-8;
+  ctx.clearRect(0,0,W,H);
+  const total=data.reduce((s,d)=>s+d.v,0);
+  if(!total){ctx.font='13px Noto Sans TC';ctx.fillStyle='#A09D95';ctx.textAlign='center';ctx.fillText('本月無資料',cx,cy);document.getElementById(legendId).innerHTML='';return}
+  let ang=-Math.PI/2;
+  data.forEach((d,i)=>{
+    const slice=(d.v/total)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+slice);ctx.closePath();
+    ctx.fillStyle=PIE_COLORS[i%PIE_COLORS.length];ctx.fill();
+    ang+=slice;
+  });
+  // donut hole
+  ctx.beginPath();ctx.arc(cx,cy,R*0.52,0,Math.PI*2);ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface')||'#fff';ctx.fill();
+  // legend
+  document.getElementById(legendId).innerHTML=data.map((d,i)=>`
+    <div class="pie-leg-item">
+      <div class="pie-dot" style="background:${PIE_COLORS[i%PIE_COLORS.length]}"></div>
+      <span class="pie-leg-name">${d.k}</span>
+      <span class="pie-leg-pct">${Math.round(d.v/total*100)}%</span>
+    </div>`).join('');
+}
+
+function renderChart(){
+  const list=monthTxs();
+  const expMap={},incMap={};
+  list.filter(t=>t.type==='expense').forEach(t=>expMap[t.cat]=(expMap[t.cat]||0)+t.amount);
+  list.filter(t=>t.type==='income').forEach(t=>incMap[t.cat]=(incMap[t.cat]||0)+t.amount);
+  const expData=Object.entries(expMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({k,v}));
+  const incData=Object.entries(incMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({k,v}));
+  drawPie('pieCanvas','pieLegend',expData);
+  drawPie('pieIncCanvas','pieLegendInc',incData);
+}
+
+// ── Render Budget ──
+function renderBudget(){
+  const list=monthTxs();
+  const expMap={};
+  list.filter(t=>t.type==='expense').forEach(t=>expMap[t.cat]=(expMap[t.cat]||0)+t.amount);
+  const rows=CATS_EXP.map(cat=>{
+    const spent=expMap[cat]||0;
+    const budget=budgets[cat]||0;
+    const pct=budget?Math.min(Math.round(spent/budget*100),100):0;
+    const color=pct>90?'#E24B4A':pct>70?'#F28E2B':'#4E9A5B';
+    return `<div class="budget-row">
+      <div class="budget-cat">${CAT_ICON[cat]} ${cat}</div>
+      <div class="progress-track"><div class="progress-bar" style="width:${budget?pct:0}%;background:${color}"></div></div>
+      <div style="font-size:12px;color:var(--muted);min-width:80px;text-align:right">${fmt(spent)}${budget?' / '+fmt(budget):''}</div>
+      <div class="budget-pct">${budget?pct+'%':'未設定'}</div>
+    </div>`;
+  });
+  document.getElementById('budgetGrid').innerHTML=rows.join('');
+}
+
+// ── Render All ──
+function renderAll(){
+  updateMonthLabel();
+  renderDashboard();
+  renderChart();
+  renderBudget();
+}
+
+// ── Init ──
+document.getElementById('txDate').value=new Date().toISOString().split('T')[0];
+rebuildCatSelect();
+rebuildBudgetCatSelect();
+renderAll();
+</script>
+</body>
+</html>
