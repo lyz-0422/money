@@ -5,29 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>手帳記帳本</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@400;500&family=Ma+Shan+Zheng&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --paper:#FBF7EF;
-  --paper2:#F5EFE3;
-  --paper3:#EDE5D5;
-  --ink:#2C2416;
-  --ink2:#5C4F3A;
-  --ink3:#8C7D65;
-  --ink4:#B8A892;
-  --accent:#8B4513;
-  --accent2:#C4783A;
-  --accent3:#F0E6D3;
-  --income:#3A6B35;
-  --income-bg:#EBF4E8;
-  --expense:#8B3A3A;
-  --expense-bg:#F4EBEB;
-  --border:#D4C8B0;
-  --border2:#C0B090;
-  --r:8px;
-  --r2:12px;
-  --shadow:0 2px 8px rgba(44,36,22,.08);
+  /* 莫蘭迪色系調色盤 */
+  --paper: #F3F1EC;       /* 燕麥米色 (主背景) */
+  --paper2: #EBE7E0;      /* 稍深的米色 (側邊欄/卡片) */
+  --paper3: #DFDCD4;      /* 懸停與選取狀態 */
+  
+  --ink: #5C5A55;         /* 柔和深灰褐 (主文字) */
+  --ink2: #7A7873;        /* 次要文字 */
+  --ink3: #9C9A94;        /* 備註與標籤 */
+  --ink4: #BDBBB5;        /* 邊框與禁用狀態 */
+  
+  --accent: #78898B;      /* 莫蘭迪灰藍綠 (主色調) */
+  --accent2: #92A3A5;     /* 亮灰藍綠 */
+  --accent3: #D0D6D6;     /* 極淡灰藍綠 (按鈕懸停) */
+  
+  --income: #8B9B82;      /* 莫蘭迪灰綠 (收入) */
+  --income-bg: #E3E7E1;
+  --expense: #B88B8D;     /* 莫蘭迪藕粉 (支出) */
+  --expense-bg: #EBE0E1;
+  
+  --border: #D8D5CD;
+  --border2: #C4C1B9;
+  
+  --r: 12px;              /* 更加圓潤的邊角 */
+  --r2: 18px;
+  --shadow: 0 6px 16px rgba(92, 90, 85, 0.06);
 }
 body{
   font-family:'Noto Sans TC',sans-serif;
@@ -37,11 +43,11 @@ body{
   font-size:14px;
   line-height:1.7;
   background-image:
-    repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(180,160,120,.08) 27px,rgba(180,160,120,.08) 28px);
+    repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(160,150,140,.06) 27px,rgba(160,150,140,.06) 28px);
 }
 
 /* ─── Layout ─── */
-.app{display:grid;grid-template-columns:220px 1fr;min-height:100dvh;max-width:1100px;margin:0 auto}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100dvh;max-width:1100px;margin:0 auto}
 @media(max-width:768px){.app{grid-template-columns:1fr}}
 
 /* ─── Sidebar ─── */
@@ -57,312 +63,323 @@ body{
 }
 
 .logo{
-  padding:1.5rem 1.25rem 1.25rem;
+  padding:1.75rem 1.25rem 1.5rem;
   border-bottom:1px dashed var(--border);
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:12px;
 }
 .logo-icon{
-  width:36px;height:36px;
+  width:40px;height:40px;
   background:var(--accent);
-  border-radius:var(--r);
+  color:var(--paper);
+  border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:18px;
   flex-shrink:0;
+  box-shadow: 0 4px 10px rgba(120, 137, 139, 0.3);
 }
 .logo-name{
-  font-family:'Ma Shan Zheng',cursive;
-  font-size:18px;color:var(--ink);
-  letter-spacing:2px;
+  font-family:'Noto Serif TC',serif;
+  font-size:19px;
+  font-weight:700;
+  color:var(--ink);
+  letter-spacing:1px;
 }
 @media(max-width:768px){.logo{padding:.75rem 1rem;border-bottom:none;border-right:1px solid var(--border)}}
 
-.nav{padding:.75rem .5rem;flex:1}
+.nav{padding:1rem .75rem;flex:1}
 @media(max-width:768px){.nav{display:flex;padding:.4rem .5rem;gap:2px;flex-shrink:0}}
 .nav-item{
-  display:flex;align-items:center;gap:9px;
-  padding:.55rem .75rem;border-radius:var(--r);
-  cursor:pointer;font-size:13px;color:var(--ink2);font-weight:500;
-  transition:all .15s;white-space:nowrap;
+  display:flex;align-items:center;gap:10px;
+  padding:.65rem .85rem;
+  margin-bottom:4px;
+  border-radius:var(--r);
+  cursor:pointer;font-size:14px;color:var(--ink2);font-weight:500;
+  transition:all .2s ease;white-space:nowrap;
   letter-spacing:.3px;
 }
 .nav-item:hover{background:var(--paper3);color:var(--ink)}
-.nav-item.active{background:var(--accent);color:#FBF7EF}
-.nav-icon{font-size:14px;flex-shrink:0}
+.nav-item.active{background:var(--accent);color:var(--paper);box-shadow: 0 2px 6px rgba(120, 137, 139, 0.2);}
+.nav-icon{font-size:16px;flex-shrink:0}
 
 .month-nav{
-  padding:.75rem 1rem;
+  padding:1.25rem;
   border-top:1px dashed var(--border);
   margin-top:auto;
 }
 @media(max-width:768px){
   .month-nav{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;border-top:none;border-left:1px solid var(--border);margin-top:0;margin-left:auto;flex-shrink:0}
 }
-.month-title{font-family:'Ma Shan Zheng',cursive;font-size:15px;color:var(--ink);margin-bottom:6px;letter-spacing:1px}
+.month-title{font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px;letter-spacing:1px}
 @media(max-width:768px){.month-title{margin-bottom:0}}
-.month-btns{display:flex;gap:6px;align-items:center}
+.month-btns{display:flex;gap:8px;align-items:center}
 .mb{
   background:var(--paper);border:1px solid var(--border);
-  border-radius:6px;width:28px;height:28px;cursor:pointer;
+  border-radius:8px;width:32px;height:32px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   color:var(--ink2);font-size:14px;transition:all .15s;
 }
-.mb:hover{background:var(--accent3);border-color:var(--border2)}
-.ml{font-size:13px;color:var(--ink2);min-width:40px;text-align:center;font-family:'Ma Shan Zheng',cursive;letter-spacing:1px}
+.mb:hover{background:var(--accent3);border-color:var(--border2);color:var(--ink)}
+.ml{font-size:14px;font-weight:700;color:var(--ink);min-width:44px;text-align:center;font-family:'Noto Serif TC',serif;letter-spacing:1px}
 
 /* ─── Sync bar ─── */
 .sync-bar{
-  padding:.5rem .75rem;
+  padding:.6rem 1rem;
   background:var(--paper3);
   border-bottom:1px dashed var(--border);
   display:flex;align-items:center;gap:8px;
-  font-size:11px;color:var(--ink3);
+  font-size:12px;color:var(--ink2);
+  border-radius: var(--r) var(--r) 0 0;
+  margin: 1.5rem 1.75rem 0;
 }
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ink4);flex-shrink:0;transition:background .3s}
+@media(max-width:768px){.sync-bar{margin: 0; border-radius: 0;}}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--ink4);flex-shrink:0;transition:background .3s}
 .sync-dot.ok{background:var(--income)}
 .sync-dot.err{background:var(--expense)}
 .sync-dot.loading{background:var(--accent2);animation:pulse .8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .sync-id{
-  font-family:'DM Mono',monospace;font-size:10px;
+  font-family:'Quicksand',monospace;font-size:11px;font-weight:600;
   background:var(--paper);border:1px solid var(--border);
-  border-radius:4px;padding:1px 5px;color:var(--ink3);
-  cursor:pointer;
+  border-radius:6px;padding:2px 6px;color:var(--ink2);
+  cursor:pointer;transition:all .2s;
 }
-.sync-id:hover{border-color:var(--accent2)}
+.sync-id:hover{border-color:var(--accent2);color:var(--ink)}
 
 /* ─── Main ─── */
-.main{overflow-y:auto;padding:1.5rem 1.75rem}
+.main{overflow-y:auto;padding:0 1.75rem 1.5rem}
 @media(max-width:768px){.main{padding:.75rem 1rem}}
 
 /* ─── Page ─── */
-.page{display:none; animation: fadeIn 0.3s ease;}
-.page.active{display:block}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.page{display:none; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);}
+.page.active{display:block; margin-top: 1rem;}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Cards ─── */
 .card{
   background:var(--paper2);
   border:1px solid var(--border);
   border-radius:var(--r2);
-  padding:1.25rem 1.5rem;
+  padding:1.5rem 1.75rem;
   box-shadow:var(--shadow);
   position:relative;
 }
 .card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   border-radius:var(--r2) var(--r2) 0 0;
-  opacity:.6;
+  opacity:.7;
 }
-.card+.card{margin-top:1rem}
+.card+.card{margin-top:1.25rem}
 .card-title{
-  font-family:'Ma Shan Zheng',cursive;
-  font-size:16px;color:var(--accent);
-  letter-spacing:1.5px;margin-bottom:1rem;
+  font-family:'Noto Serif TC',serif;
+  font-size:17px;font-weight:700;color:var(--accent);
+  letter-spacing:1px;margin-bottom:1.25rem;
 }
 
 /* ─── Summary ─── */
-.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem}
 @media(max-width:480px){.summary-grid{grid-template-columns:1fr 1fr}}
 .stat{
   background:var(--paper);
   border:1px solid var(--border);
   border-radius:var(--r);
-  padding:.9rem 1rem;
+  padding:1rem 1.25rem;
   text-align:center;
   position:relative;overflow:hidden;
+  box-shadow: 0 2px 8px rgba(92, 90, 85, 0.03);
 }
 .stat::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
 }
 .stat.inc::after{background:var(--income)}
 .stat.exp::after{background:var(--expense)}
 .stat.bal::after{background:var(--accent2)}
-.stat-label{font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:1px;font-weight:500}
-.stat-value{font-family:'DM Mono',monospace;font-size:19px;font-weight:500}
+.stat-label{font-size:11px;color:var(--ink3);margin-bottom:6px;letter-spacing:1.5px;font-weight:500}
+.stat-value{font-family:'Quicksand',sans-serif;font-size:22px;font-weight:700}
 .stat-value.inc{color:var(--income)}.stat-value.exp{color:var(--expense)}.stat-value.bal{color:var(--accent)}
 @media(max-width:480px){.stat:last-child{grid-column:1/-1}}
 
 /* ─── Bar chart ─── */
-.bar-chart{overflow-x:auto;padding-bottom:.5rem;margin:.25rem 0}
-.bars-wrap{display:flex;align-items:flex-end;gap:4px;height:90px;min-width:min-content}
-.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:24px}
-.bar-track{display:flex;align-items:flex-end;gap:2px;height:68px;justify-content:center;width:100%}
-.bar{border-radius:3px 3px 0 0;min-height:2px;width:9px; transition: height 0.5s ease;}
+.bar-chart{overflow-x:auto;padding-bottom:.5rem;margin:.5rem 0}
+.bars-wrap{display:flex;align-items:flex-end;gap:6px;height:100px;min-width:min-content}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:28px}
+.bar-track{display:flex;align-items:flex-end;gap:2px;height:76px;justify-content:center;width:100%}
+.bar{border-radius:4px 4px 0 0;min-height:3px;width:11px; transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);}
 .bar.e{background:var(--expense)}.bar.i{background:var(--income)}
-.bar-d{font-size:9px;color:var(--ink4);font-family:'DM Mono',monospace}
-.bar-legend{display:flex;gap:12px;margin-top:.5rem;font-size:11px;color:var(--ink3)}
-.ldot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.bar-d{font-size:10px;color:var(--ink3);font-family:'Quicksand',sans-serif;font-weight:600}
+.bar-legend{display:flex;gap:16px;margin-top:.75rem;font-size:12px;color:var(--ink2);font-weight:500;}
+.ldot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
 
 /* ─── Transactions ─── */
-.tx-date-group{margin-bottom:.25rem}
+.tx-date-group{margin-bottom:.5rem}
 .tx-date-header{
-  font-family:'Ma Shan Zheng',cursive;
-  font-size:13px;color:var(--ink3);
-  padding:.4rem 0 .2rem;
+  font-family:'Noto Serif TC',serif;
+  font-size:14px;font-weight:700;color:var(--ink3);
+  padding:.5rem 0 .25rem;
   border-bottom:1px dashed var(--border);
-  margin-bottom:.25rem;
+  margin-bottom:.5rem;
   letter-spacing:1px;
 }
 .tx-item{
-  display:flex;align-items:center;gap:10px;
-  padding:.55rem .25rem;
-  border-bottom:1px dotted var(--border);
-  transition:background .15s;
+  display:flex;align-items:center;gap:12px;
+  padding:.6rem .5rem;
+  border-bottom:1px solid rgba(216, 213, 205, 0.5);
+  transition:background .2s;
   border-radius:var(--r);
 }
 .tx-item:last-child{border-bottom:none}
 .tx-item:hover{background:var(--paper3)}
 .tx-icon{
-  width:32px;height:32px;border-radius:8px;
+  width:38px;height:38px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
-  font-size:15px;flex-shrink:0;
+  font-size:16px;flex-shrink:0;
 }
-.tx-icon.income{background:var(--income-bg)}.tx-icon.expense{background:var(--expense-bg)}
+.tx-icon.income{background:var(--income-bg);color:var(--income)}
+.tx-icon.expense{background:var(--expense-bg);color:var(--expense)}
 .tx-info{flex:1;min-width:0}
-.tx-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tx-meta{font-size:10px;color:var(--ink4);margin-top:1px}
-.tx-amt{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;flex-shrink:0}
+.tx-name{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--ink3);margin-top:2px}
+.tx-amt{font-family:'Quicksand',sans-serif;font-size:15px;font-weight:700;flex-shrink:0}
 .tx-amt.income{color:var(--income)}.tx-amt.expense{color:var(--expense)}
 .tx-del{
-  width:24px;height:24px;border:none;background:none;cursor:pointer;
-  border-radius:6px;color:var(--ink4);font-size:14px;
+  width:28px;height:28px;border:none;background:none;cursor:pointer;
+  border-radius:8px;color:var(--ink4);font-size:14px;
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;opacity:0;transition:opacity .15s, background .15s;
+  flex-shrink:0;opacity:0;transition:all .2s;
 }
 .tx-item:hover .tx-del{opacity:1}
 .tx-del:hover{background:var(--expense-bg);color:var(--expense)}
 .tag{
-  display:inline-block;padding:1px 6px;border-radius:20px;
-  font-size:9px;font-weight:500;
-  background:var(--accent3);color:var(--accent);border:1px solid rgba(139,69,19,.2);
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:500;
+  background:var(--accent3);color:var(--ink);
 }
 .empty{
-  text-align:center;padding:3rem 1rem;
-  color:var(--ink4);font-size:13px;
-  font-family:'Ma Shan Zheng',cursive;letter-spacing:1px;
+  text-align:center;padding:3.5rem 1rem;
+  color:var(--ink4);font-size:14px;
+  font-family:'Noto Serif TC',serif;letter-spacing:1px;
   line-height:2;
 }
 
 /* ─── Form ─── */
-.form-add{display:grid;gap:.75rem}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.form-add{display:grid;gap:1rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:480px){.form-row{grid-template-columns:1fr}}
-.fg{display:flex;flex-direction:column;gap:4px}
+.fg{display:flex;flex-direction:column;gap:6px}
 .fg label{
-  font-size:11px;font-weight:500;color:var(--ink3);
-  letter-spacing:.5px;font-family:'Ma Shan Zheng',cursive;font-size:13px;
+  font-weight:500;color:var(--ink2);
+  letter-spacing:.5px;font-size:12px;
 }
 .fg input,.fg select{
-  padding:8px 10px;font-size:13px;
+  padding:10px 12px;font-size:14px;
   font-family:'Noto Sans TC',sans-serif;
   border:1px solid var(--border);border-radius:var(--r);
   background:var(--paper);color:var(--ink);outline:none;width:100%;
-  transition:border-color .15s,box-shadow .15s;
+  transition:all .2s;
 }
 .fg input:focus,.fg select:focus{
-  border-color:var(--accent2);
-  box-shadow:0 0 0 3px rgba(196,120,58,.1);
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(120, 137, 139, 0.15);
+  background:#fff;
 }
 .type-toggle{
-  display:grid;grid-template-columns:1fr 1fr;gap:3px;
-  background:var(--paper3);padding:3px;border-radius:var(--r);
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;
+  background:var(--paper3);padding:4px;border-radius:var(--r);
   border:1px solid var(--border);
 }
 .tt-btn{
-  border:none;border-radius:6px;padding:9px;
-  font-size:13px;font-family:'Noto Sans TC',sans-serif;
-  cursor:pointer;font-weight:500;background:transparent;color:var(--ink3);
-  transition:all .15s;letter-spacing:.3px;
+  border:none;border-radius:8px;padding:10px;
+  font-size:14px;font-family:'Noto Sans TC',sans-serif;
+  cursor:pointer;font-weight:500;background:transparent;color:var(--ink2);
+  transition:all .2s;letter-spacing:.5px;
 }
-.tt-btn.active.exp{background:var(--expense-bg);color:var(--expense);border:1px solid rgba(139,58,58,.2)}
-.tt-btn.active.inc{background:var(--income-bg);color:var(--income);border:1px solid rgba(58,107,53,.2)}
+.tt-btn.active.exp{background:var(--expense-bg);color:var(--expense);border:1px solid rgba(184, 139, 141, 0.3);box-shadow:0 2px 4px rgba(184, 139, 141, 0.1)}
+.tt-btn.active.inc{background:var(--income-bg);color:var(--income);border:1px solid rgba(139, 155, 130, 0.3);box-shadow:0 2px 4px rgba(139, 155, 130, 0.1)}
 .btn-primary{
-  width:100%;padding:10px;font-size:14px;
-  font-family:'Ma Shan Zheng',cursive;font-weight:400;letter-spacing:2px;
+  width:100%;padding:12px;font-size:15px;
+  font-family:'Noto Serif TC',serif;font-weight:700;letter-spacing:2px;
   border:none;border-radius:var(--r);
   background:var(--accent);color:var(--paper);cursor:pointer;
-  transition:all .15s;
+  transition:all .2s;box-shadow: 0 4px 10px rgba(120, 137, 139, 0.2);
 }
-.btn-primary:hover{background:var(--accent2)}
-.btn-primary:active{transform:scale(.99)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow: 0 6px 14px rgba(120, 137, 139, 0.3);}
+.btn-primary:active{transform:scale(.98);box-shadow:none;}
 
 /* ─── Pie ─── */
-.pie-wrap{display:grid;grid-template-columns:150px 1fr;gap:1.25rem;align-items:center}
+.pie-wrap{display:grid;grid-template-columns:160px 1fr;gap:1.5rem;align-items:center}
 @media(max-width:480px){.pie-wrap{grid-template-columns:1fr;justify-items:center}}
-.pie-legend{display:flex;flex-direction:column;gap:.4rem}
-.pie-leg-item{display:flex;align-items:center;gap:7px;font-size:12px}
-.pie-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.pie-leg-name{flex:1;color:var(--ink)}
-.pie-leg-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)}
+.pie-legend{display:flex;flex-direction:column;gap:.6rem}
+.pie-leg-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.pie-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.pie-leg-name{flex:1;}
+.pie-leg-pct{font-family:'Quicksand',sans-serif;font-weight:600;font-size:12px;color:var(--ink3)}
 
 /* ─── Budget ─── */
-.budget-grid{display:grid;gap:.6rem}
-.budget-row{display:grid;grid-template-columns:76px 1fr auto 56px;gap:8px;align-items:center}
-@media(max-width:480px){.budget-row{grid-template-columns:68px 1fr 50px}}
-.budget-cat{font-size:12px;font-weight:500;color:var(--ink2)}
-.progress-track{height:6px;background:var(--paper3);border-radius:3px;overflow:hidden}
-.progress-bar{height:100%;border-radius:3px;transition:width .4s}
-.budget-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);text-align:right}
-.budget-input-row{display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;align-items:end;margin-top:.75rem}
+.budget-grid{display:grid;gap:.8rem}
+.budget-row{display:grid;grid-template-columns:80px 1fr auto 56px;gap:10px;align-items:center}
+@media(max-width:480px){.budget-row{grid-template-columns:70px 1fr 50px}}
+.budget-cat{font-size:13px;font-weight:500;color:var(--ink)}
+.progress-track{height:8px;background:var(--paper3);border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;border-radius:4px;transition:width .5s cubic-bezier(0.16, 1, 0.3, 1);}
+.budget-pct{font-family:'Quicksand',sans-serif;font-weight:600;font-size:12px;color:var(--ink3);text-align:right}
+.budget-input-row{display:grid;grid-template-columns:1fr 1fr auto;gap:1rem;align-items:end;margin-top:1rem}
 @media(max-width:480px){.budget-input-row{grid-template-columns:1fr auto}}
 .btn-sm{
-  padding:8px 14px;font-size:12px;
-  font-family:'Ma Shan Zheng',cursive;letter-spacing:1px;
+  padding:10px 16px;font-size:13px;
+  font-family:'Noto Serif TC',serif;font-weight:700;letter-spacing:1px;
   border:1px solid var(--border2);border-radius:var(--r);
   background:var(--paper);color:var(--ink);cursor:pointer;
-  transition:all .15s;
+  transition:all .2s;
 }
-.btn-sm:hover{background:var(--paper3)}
+.btn-sm:hover{background:var(--paper3);border-color:var(--accent)}
 
 /* ─── Sync/Export ─── */
-.export-desc{font-size:12px;color:var(--ink3);line-height:1.7;margin-bottom:.75rem}
-.export-opts{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.export-desc{font-size:13px;color:var(--ink2);line-height:1.8;margin-bottom:1rem}
+.export-opts{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 @media(max-width:480px){.export-opts{grid-template-columns:1fr}}
 .export-card{
   background:var(--paper);border:1px solid var(--border);
-  border-radius:var(--r);padding:1rem;cursor:pointer;transition:all .15s;
+  border-radius:var(--r);padding:1.25rem;cursor:pointer;transition:all .2s;
 }
-.export-card:hover{border-color:var(--accent2);background:var(--accent3)}
-.export-card-title{font-family:'Ma Shan Zheng',cursive;font-size:15px;letter-spacing:1px;margin-bottom:3px;color:var(--ink)}
-.export-card-desc{font-size:11px;color:var(--ink3)}
+.export-card:hover{border-color:var(--accent);background:var(--paper2);transform:translateY(-2px);box-shadow: 0 4px 12px rgba(120, 137, 139, 0.1)}
+.export-card-title{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:6px;color:var(--ink)}
+.export-card-desc{font-size:12px;color:var(--ink3)}
 
 .sync-setup{
   background:var(--paper);border:1px solid var(--border);
-  border-radius:var(--r);padding:1rem;margin-top:.5rem;
+  border-radius:var(--r);padding:1.25rem;margin-top:.75rem;
 }
-.sync-setup-title{font-family:'Ma Shan Zheng',cursive;font-size:15px;letter-spacing:1px;margin-bottom:.5rem;color:var(--ink)}
-.sync-setup p{font-size:11px;color:var(--ink3);margin-bottom:.75rem;line-height:1.8}
+.sync-setup-title{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:.5rem;color:var(--ink)}
 .sync-input-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
 .sync-input-row input{
-  flex:1;min-width:180px;padding:7px 10px;font-size:12px;
-  font-family:'DM Mono',monospace;
+  flex:1;min-width:180px;padding:9px 12px;font-size:13px;
+  font-family:'Quicksand',monospace;
   border:1px solid var(--border);border-radius:var(--r);
   background:var(--paper2);color:var(--ink);outline:none;
 }
-.sync-input-row input:focus{border-color:var(--accent2)}
+.sync-input-row input:focus{border-color:var(--accent);background:#fff;}
 
 /* ─── Toast ─── */
 .toast{
-  position:fixed;bottom:1.5rem;left:50%;
+  position:fixed;bottom:2rem;left:50%;
   transform:translateX(-50%) translateY(20px);
   background:var(--ink);color:var(--paper);
-  padding:.6rem 1.25rem;border-radius:var(--r);
-  font-size:12px;opacity:0;transition:opacity .2s,transform .2s;
+  padding:.75rem 1.5rem;border-radius:20px;
+  font-size:13px;font-weight:500;opacity:0;transition:opacity .3s,transform .3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events:none;z-index:999;white-space:nowrap;
-  font-family:'Ma Shan Zheng',cursive;letter-spacing:1px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ─── Decorative ─── */
 .page-header{
-  display:flex;align-items:baseline;gap:12px;margin-bottom:1rem;
+  display:flex;align-items:baseline;gap:12px;margin-bottom:1.25rem;
 }
 .page-header h1{
-  font-family:'Ma Shan Zheng',cursive;
-  font-size:22px;color:var(--accent);letter-spacing:2px;
+  font-family:'Noto Serif TC',serif;
+  font-size:24px;font-weight:700;color:var(--accent);letter-spacing:2px;
 }
-.page-header .subtitle{font-size:11px;color:var(--ink4);letter-spacing:.5px}
+.page-header .subtitle{font-size:12px;color:var(--ink4);letter-spacing:1px;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -372,7 +389,7 @@ body{
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-icon">📖</div>
-    <span class="logo-name">手帳記帳</span>
+    <span class="logo-name">日常手帖</span>
   </div>
   <nav class="nav">
     <div class="nav-item active" onclick="gotoPage('dashboard',this)">
@@ -382,7 +399,7 @@ body{
       <span class="nav-icon">✏️</span>新增記錄
     </div>
     <div class="nav-item" onclick="gotoPage('chart',this)">
-      <span class="nav-icon">🥧</span>分類圓餅圖
+      <span class="nav-icon">🥧</span>收支圖表
     </div>
     <div class="nav-item" onclick="gotoPage('budget',this)">
       <span class="nav-icon">🎯</span>預算設定
@@ -413,7 +430,7 @@ body{
   <div class="page active" id="page-dashboard">
     <div class="page-header">
       <h1 id="dashTitle">本月記帳</h1>
-      <span class="subtitle">收支明細</span>
+      <span class="subtitle">OVERVIEW</span>
     </div>
     <div class="summary-grid">
       <div class="stat inc"><div class="stat-label">收 入</div><div class="stat-value inc" id="dIncome">NT$0</div></div>
@@ -428,15 +445,18 @@ body{
         <span><span class="ldot" style="background:var(--income)"></span>收入</span>
       </div>
     </div>
-    <div class="card" style="margin-top:1rem">
-      <div class="card-title">本月明細</div>
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-title">近期明細</div>
       <div id="txList"><div class="empty">📝<br>本月尚無記錄<br>點左側「新增記錄」開始記帳</div></div>
     </div>
   </div>
 
   <!-- Add -->
   <div class="page" id="page-add">
-    <div class="page-header"><h1>新增記錄</h1></div>
+    <div class="page-header">
+      <h1>新增記錄</h1>
+      <span class="subtitle">NEW ENTRY</span>
+    </div>
     <div class="card">
       <div class="form-add">
         <div class="type-toggle">
@@ -474,18 +494,21 @@ body{
 
   <!-- Chart -->
   <div class="page" id="page-chart">
-    <div class="page-header"><h1>分類圓餅圖</h1></div>
+    <div class="page-header">
+      <h1>收支圖表</h1>
+      <span class="subtitle">CHARTS</span>
+    </div>
     <div class="card">
       <div class="card-title">支出分類佔比</div>
       <div class="pie-wrap">
-        <canvas id="pieCanvas" width="140" height="140"></canvas>
+        <canvas id="pieCanvas" width="160" height="160"></canvas>
         <div class="pie-legend" id="pieLegend"></div>
       </div>
     </div>
-    <div class="card" style="margin-top:1rem">
+    <div class="card" style="margin-top:1.5rem">
       <div class="card-title">收入分類佔比</div>
       <div class="pie-wrap">
-        <canvas id="pieIncCanvas" width="140" height="140"></canvas>
+        <canvas id="pieIncCanvas" width="160" height="160"></canvas>
         <div class="pie-legend" id="pieLegendInc"></div>
       </div>
     </div>
@@ -493,12 +516,15 @@ body{
 
   <!-- Budget -->
   <div class="page" id="page-budget">
-    <div class="page-header"><h1>預算設定</h1></div>
+    <div class="page-header">
+      <h1>預算設定</h1>
+      <span class="subtitle">BUDGET</span>
+    </div>
     <div class="card">
       <div class="card-title">本月預算進度</div>
       <div class="budget-grid" id="budgetGrid"></div>
     </div>
-    <div class="card" style="margin-top:1rem">
+    <div class="card" style="margin-top:1.5rem">
       <div class="card-title">設定分類預算</div>
       <div class="budget-input-row">
         <div class="fg">
@@ -516,26 +542,29 @@ body{
 
   <!-- Sync -->
   <div class="page" id="page-sync">
-    <div class="page-header"><h1>同步與備份</h1></div>
+    <div class="page-header">
+      <h1>同步與備份</h1>
+      <span class="subtitle">DATA SYNC</span>
+    </div>
     
     <div class="card">
-      <div class="card-title">雲端同步金鑰 (可選)</div>
+      <div class="card-title">雲端同步空間</div>
       <p class="export-desc">
-        長輩不需要設定這個！但如果你想讓兩支手機同步，可以使用免費的 <strong>jsonbin.io</strong> 服務。<br>
-        點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機即可。
+        使用開放式穩定雲端服務（不需註冊，不易被阻擋）。<br>
+        點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機即可跨裝置同步。
       </p>
       <div class="sync-setup">
         <div class="sync-setup-title">目前的同步 ID</div>
         <div class="sync-input-row">
-          <input type="text" id="binIdInput" placeholder="貼上 Bin ID..." spellcheck="false">
+          <input type="text" id="binIdInput" placeholder="貼上空間 ID..." spellcheck="false">
           <button class="btn-sm" onclick="connectBin()">連 接</button>
           <button class="btn-sm" onclick="createBin()" style="background:var(--accent);color:var(--paper);border-color:var(--accent)">建立新的</button>
         </div>
-        <div id="syncMsg" style="margin-top:.75rem;font-size:11px;color:var(--ink3);font-weight:bold;"></div>
+        <div id="syncMsg" style="margin-top:.85rem;font-size:12px;color:var(--ink3);font-weight:500;"></div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:1rem">
+    <div class="card" style="margin-top:1.5rem">
       <div class="card-title">手動備份資料</div>
       <div class="export-opts">
         <div class="export-card" onclick="exportCSV('month')">
@@ -549,9 +578,9 @@ body{
       </div>
     </div>
 
-    <div class="card" style="margin-top:1rem; border-color: rgba(139,58,58,0.3);">
+    <div class="card" style="margin-top:1.5rem; border-color: rgba(184,139,141,0.4); background: rgba(235,224,225,0.3);">
       <div class="card-title" style="color: var(--expense);">危險區域</div>
-      <button class="btn-sm" onclick="clearAll()" style="color:var(--expense);border-color:var(--expense);width:100%;">清除所有本地資料</button>
+      <button class="btn-sm" onclick="clearAll()" style="color:var(--expense);border-color:var(--expense);width:100%;background:white;">清除所有本地資料</button>
     </div>
   </div>
 
@@ -565,10 +594,11 @@ body{
 const CATS_EXP=['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
 const CATS_INC=['薪資','獎金','副業','投資','其他'];
 const CAT_ICON={餐飲:'🍜',交通:'🚌',購物:'🛍',娛樂:'🎮',醫療:'💊',住宿:'🏠',教育:'📚',薪資:'💼',獎金:'🎁',副業:'💻',投資:'📈',其他:'📁'};
-const PIE_COLORS=['#8B4513','#C4783A','#3A6B35','#6B5B3A','#8B6914','#4A6B8B','#6B3A6B','#3A6B6B','#8B3A5A','#5A8B3A'];
+
+// 莫蘭迪圓餅圖色系
+const PIE_COLORS=['#78898B','#B88B8D','#8B9B82','#A18D95','#C9B6A1','#8E9EAB','#B5A69B','#95A5A6','#C2A3A3','#A3B2A1'];
 
 // --- 本地優先防護機制 ---
-// 第一時間先抓本地資料，保證畫面絕對不空白
 let txs = JSON.parse(localStorage.getItem('my_txs') || '[]');
 let budgets = JSON.parse(localStorage.getItem('my_budgets') || '{}');
 let binId = localStorage.getItem('my_binId') || '';
@@ -580,7 +610,6 @@ let curM = new Date().getMonth();
 const fmt = n => 'NT$' + Math.round(Math.abs(n)).toLocaleString();
 function monthTxs(y, m) { return txs.filter(t => { const d = new Date(t.date); return d.getFullYear() === (y ?? curY) && d.getMonth() === (m ?? curM) }) }
 
-// 儲存時，優先鎖進本地資料庫
 function saveLocal() { 
     localStorage.setItem('my_txs', JSON.stringify(txs)); 
     localStorage.setItem('my_budgets', JSON.stringify(budgets)); 
@@ -592,8 +621,7 @@ function toast(msg) {
     setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
-// ── Sync (雲端同步) ──
-// 使用 public 匿名創建模式，但加上時間戳防快取
+// ── Sync (雲端同步 - 改用不會被阻擋的 npoint.io) ──
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('syncDot');
   const status = document.getElementById('syncStatus');
@@ -610,15 +638,14 @@ async function pushToCloud() {
   if(!binId) return;
   setSyncStatus('loading', '雲端儲存中...');
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-      method: 'PUT',
+    const res = await fetch(`https://api.npoint.io/${binId}`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ txs, budgets })
     });
     if(!res.ok) throw new Error(res.status);
     setSyncStatus('ok', '已安全同步');
   } catch(e) {
-    // 即使失敗，本地資料依然存在，不影響使用
     setSyncStatus('err', '網路不穩，已暫存本地');
   }
 }
@@ -627,19 +654,17 @@ async function pullFromCloud() {
   if(!binId) return false;
   setSyncStatus('loading', '更新資料中...');
   try {
-    // 關鍵：加入 ?_t=... 騙過瀏覽器快取，每次都抓最新
     const cacheBuster = new Date().getTime();
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest?_t=${cacheBuster}`, {
-      headers: { 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' }
+    const res = await fetch(`https://api.npoint.io/${binId}?_t=${cacheBuster}`, {
+      headers: { 'Cache-Control': 'no-cache' }
     });
     if(!res.ok) throw new Error(res.status);
     const data = await res.json();
     
-    // 關鍵防護：如果雲端資料沒壞掉，才覆蓋本地
     if(data && Array.isArray(data.txs)) {
       txs = data.txs;
       budgets = data.budgets || {};
-      saveLocal(); // 覆蓋後馬上備份到本地
+      saveLocal(); 
     }
     
     setSyncStatus('ok', '資料已是最新');
@@ -654,15 +679,15 @@ async function createBin() {
   setSyncStatus('loading', '建立空間中...');
   document.getElementById('syncMsg').textContent = '正在與伺服器連線...';
   try {
-    const res = await fetch('https://api.jsonbin.io/v3/b', {
+    const res = await fetch('https://api.npoint.io', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Bin-Private': 'false' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ txs, budgets })
     });
     if(!res.ok) throw new Error(res.status);
     const data = await res.json();
     
-    binId = data.metadata.id;
+    binId = data.id; // npoint回傳的是id
     localStorage.setItem('my_binId', binId);
     document.getElementById('binIdInput').value = binId;
     document.getElementById('syncMsg').textContent = '✅ 建立成功！您可以複製上方的 ID 分享給家人。';
@@ -743,18 +768,15 @@ window.addTx = async function() {
   
   if(!name || !amt || amt <= 0 || !date) { toast('請填寫名稱、金額及日期'); return; }
   
-  // 第一時間先推進本地端，保護資料
   txs.push({ id: Date.now(), type: currentType, name, amount: amt, cat, date, note });
   saveLocal();
   
-  // 更新畫面讓使用者覺得反應很快
   document.getElementById('txName').value = '';
   document.getElementById('txAmt').value = '';
   document.getElementById('txNote').value = '';
   toast('✅ 已記錄：' + name);
   renderAll();
   
-  // 在背景默默上傳雲端
   await pushToCloud();
 }
 
@@ -795,7 +817,7 @@ window.exportCSV = function(scope) {
   const csv = '\uFEFF' + header + '\n' + rows.join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = '家族手帳_' + (scope === 'all' ? '全部' : curY + '_' + (curM+1) + '月') + '.csv';
+  a.download = '手帳記帳_' + (scope === 'all' ? '全部' : curY + '_' + (curM+1) + '月') + '.csv';
   a.click();
   toast('📥 CSV 已下載');
 }
@@ -819,7 +841,7 @@ function renderDashboard() {
   const bc = document.getElementById('barChart');
   
   if(!entries.length) {
-    bc.innerHTML = '<div style="padding:1rem;color:var(--ink4);font-size:12px;font-family:\'Ma Shan Zheng\',cursive;letter-spacing:1px">本月尚無收支圖表</div>';
+    bc.innerHTML = '<div style="padding:1rem;color:var(--ink4);font-size:12px;font-family:\'Noto Serif TC\',serif;letter-spacing:1px">本月尚無收支圖表</div>';
   } else {
     bc.innerHTML = entries.map(([d,v]) => `<div class="bar-col"><div class="bar-track">${v.e?`<div class="bar e" style="height:${Math.round(v.e/maxV*64)}px"></div>`:''} ${v.i?`<div class="bar i" style="height:${Math.round(v.i/maxV*64)}px"></div>`:''}</div><div class="bar-d">${d}</div></div>`).join('');
   }
@@ -856,8 +878,8 @@ function drawPie(canvasId, legendId, data) {
   const total = data.reduce((s,d) => s + d.v, 0);
   
   if(!total) {
-    ctx.font = '12px "Ma Shan Zheng"'; ctx.fillStyle = 'var(--ink4)';
-    ctx.textAlign = 'center'; ctx.fillText('無資料', cx, cy);
+    ctx.font = '13px "Noto Serif TC"'; ctx.fillStyle = 'var(--ink4)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('無資料', cx, cy);
     document.getElementById(legendId).innerHTML = ''; return;
   }
   
@@ -868,7 +890,7 @@ function drawPie(canvasId, legendId, data) {
     ctx.fillStyle = PIE_COLORS[i%PIE_COLORS.length]; ctx.fill();
     ang += slice;
   });
-  ctx.beginPath(); ctx.arc(cx,cy,R*.5,0,Math.PI*2); ctx.fillStyle = '#F5EFE3'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,R*.55,0,Math.PI*2); ctx.fillStyle = 'var(--paper2)'; ctx.fill();
   
   document.getElementById(legendId).innerHTML = data.map((d, i) => `
     <div class="pie-leg-item">
@@ -897,11 +919,11 @@ function renderBudget() {
     const spent = expMap[cat] || 0;
     const budget = budgets[cat] || 0;
     const pct = budget ? Math.min(Math.round(spent/budget*100), 100) : 0;
-    const color = pct > 90 ? 'var(--expense)' : pct > 70 ? '#C4783A' : 'var(--income)';
+    const color = pct > 90 ? 'var(--expense)' : pct > 70 ? 'var(--accent)' : 'var(--income)';
     return `<div class="budget-row">
       <div class="budget-cat">${CAT_ICON[cat]} ${cat}</div>
       <div class="progress-track"><div class="progress-bar" style="width:${budget?pct:0}%;background:${color}"></div></div>
-      <div style="font-size:11px;color:var(--ink3);min-width:80px;text-align:right;font-family:'DM Mono',monospace">${fmt(spent)}${budget?' / '+fmt(budget):''}</div>
+      <div style="font-size:12px;color:var(--ink3);min-width:80px;text-align:right;font-family:'Quicksand',monospace;font-weight:600;">${fmt(spent)}${budget?' / '+fmt(budget):''}</div>
       <div class="budget-pct">${budget ? pct+'%' : '未設'}</div>
     </div>`;
   });
@@ -934,7 +956,7 @@ renderAll();
 // 如果有設定雲端 ID，在背景偷偷更新資料
 if(binId) {
   pullFromCloud().then(ok => {
-    if(ok) renderAll(); // 雲端有新資料，重新渲染畫面
+    if(ok) renderAll();
   });
 }
 </script>
