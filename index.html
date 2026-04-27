@@ -513,7 +513,8 @@ body{
 // 從 CDN 引入模組，這是在瀏覽器直接跑 HTML 必須的作法
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// 改為引入 Realtime Database 模組
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // --- 你的 Firebase 設定 ---
@@ -531,11 +532,11 @@ const firebaseConfig = {
 // 初始化 Firebase 與各項服務
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app); // 啟動 Google Analytics
-const db = getFirestore(app);
+const db = getDatabase(app); // 使用 Realtime Database
 const auth = getAuth(app);
 
-// 固定資料庫路徑：所有人打開網頁都會自動寫入這裡，不需設定 ID！
-const familyDocRef = doc(db, 'artifacts', 'money-8f158', 'public', 'data', 'family_ledger', 'main');
+// 設定 Realtime Database 路徑參考 (使用 ref)
+const familyDbRef = ref(db, 'artifacts/money-8f158/public/data/family_ledger/main');
 
 // --- 基礎設定 ---
 const CATS_EXP=['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
@@ -574,13 +575,13 @@ function setSyncStatus(state, msg) {
   if(status) status.textContent = msg;
 }
 
-// ── 啟動 Firebase 認證與即時監聽 ──
+// ── 啟動 Firebase 認證與即時監聽 (Realtime Database 版) ──
 function setupRealtimeSync() {
   isFirebaseReady = true;
-  // 設定即時監聽：一有變動，這段程式碼就會被觸發！
-  onSnapshot(familyDocRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
+  // 設定即時監聽：使用 onValue
+  onValue(familyDbRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
       txs = data.txs || [];
       budgets = data.budgets || {};
       saveLocal(); 
@@ -588,10 +589,10 @@ function setupRealtimeSync() {
       setSyncStatus('ok', '雲端即時同步中 ✨');
     } else {
       // 如果是全新的一本帳本，幫它初始化
-      setDoc(familyDocRef, { txs: txs, budgets: budgets }).catch(e => console.error(e));
+      set(familyDbRef, { txs: txs, budgets: budgets }).catch(e => console.error(e));
     }
   }, (error) => {
-    console.error("Firestore 監聽失敗 (可能是權限規則沒開):", error);
+    console.error("Database 監聽失敗 (可能是權限規則沒開):", error);
     setSyncStatus('err', '權限錯誤，請檢查 Firebase 後台 Rules');
     toast("⚠️ 無法寫入雲端，請確認已修改 Firebase 權限！");
   });
@@ -621,10 +622,11 @@ async function pushToCloud() {
   if (!isFirebaseReady) return;
   setSyncStatus('loading', '資料上傳中...');
   try {
-    await setDoc(familyDocRef, { txs, budgets });
+    // 使用 set 來覆蓋/寫入資料
+    await set(familyDbRef, { txs, budgets });
     setSyncStatus('ok', '雲端即時同步中 ✨');
   } catch(e) {
-    console.error("寫入 Firestore 失敗:", e);
+    console.error("寫入 Database 失敗:", e);
     setSyncStatus('err', '連線不穩，已暫存本地');
     toast("⚠️ 上傳失敗，請確認已修改 Firebase 權限！");
   }
