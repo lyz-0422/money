@@ -371,6 +371,10 @@ body{
     <div class="nav-item" onclick="gotoPage('budget',this)">
       <span class="nav-icon">🎯</span>預算設定
     </div>
+    <!-- 匯出資料按鈕 -->
+    <div class="nav-item" onclick="exportCSV()">
+      <span class="nav-icon">📥</span>匯出資料
+    </div>
   </nav>
   <div class="month-nav">
     <div class="month-title" id="sideMonthLabel">月份</div>
@@ -630,6 +634,54 @@ async function pushToCloud() {
     setSyncStatus('err', '連線不穩，已暫存本地');
     toast("⚠️ 上傳失敗，請確認已修改 Firebase 權限！");
   }
+}
+
+// ── 匯出 CSV 功能 ──
+window.exportCSV = function() {
+  if (!txs || txs.length === 0) {
+    toast('⚠️ 目前沒有任何記錄可匯出');
+    return;
+  }
+
+  // 定義 CSV 標頭
+  const headers = ['日期', '類型', '分類', '項目名稱', '金額', '備註'];
+  
+  // 依日期排序，新的在上面
+  const sortedTxs = [...txs].sort((a, b) => b.date.localeCompare(a.date));
+
+  // 將資料轉化為 CSV 行格式，並妥善處理文字中的引號與逗號
+  const rows = sortedTxs.map(t => {
+    const typeStr = t.type === 'expense' ? '支出' : '收入';
+    // 把文字中的雙引號轉換為兩個雙引號 (CSV 標準格式)，然後用雙引號把整個字串包起來
+    const escapeCSV = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`;
+    
+    return [
+      escapeCSV(t.date),
+      escapeCSV(typeStr),
+      escapeCSV(t.cat),
+      escapeCSV(t.name),
+      t.amount,
+      escapeCSV(t.note)
+    ].join(',');
+  });
+
+  // 結合標頭與內容
+  const csvContent = headers.join(',') + '\n' + rows.join('\n');
+
+  // 加上 BOM ( \uFEFF )，這樣用 Excel 打開 CSV 才不會出現中文亂碼
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  // 建立隱藏的下載連結並觸發點擊
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `日常手帖紀錄_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  toast('✅ 成功匯出 CSV！');
 }
 
 // ── Navigation ──
