@@ -550,8 +550,8 @@ body{
     <div class="card">
       <div class="card-title">雲端同步空間</div>
       <p class="export-desc">
-        使用開放式極速儲存庫 <strong>kvdb.io</strong> (免註冊、最穩定、不被阻擋)。<br>
-        點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機即可跨裝置同步。
+        使用您的專屬 <strong>Firebase 即時資料庫</strong>。<br>
+        點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機，即可跨裝置自動即時同步。
       </p>
       <div class="sync-setup">
         <div class="sync-setup-title">目前的同步 ID</div>
@@ -589,19 +589,38 @@ body{
 
 <div class="toast" id="toast"></div>
 
-<script>
+<!-- 關鍵：改成 module 並載入 Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// --- 你的專屬 Firebase 設定 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAcz6x6OZ0zFe24lvDsCLslO3dgCuUQGFE",
+  authDomain: "money-8f158.firebaseapp.com",
+  projectId: "money-8f158",
+  storageBucket: "money-8f158.firebasestorage.app",
+  messagingSenderId: "440960174909",
+  appId: "1:440960174909:web:a819ba7513a498e90e1354",
+  measurementId: "G-4NTEPXYXLS"
+};
+
+// 初始化 Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // --- 基礎設定 ---
 const CATS_EXP=['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
 const CATS_INC=['薪資','獎金','副業','投資','其他'];
 const CAT_ICON={餐飲:'🍜',交通:'🚌',購物:'🛍',娛樂:'🎮',醫療:'💊',住宿:'🏠',教育:'📚',薪資:'💼',獎金:'🎁',副業:'💻',投資:'📈',其他:'📁'};
 
-// 莫蘭迪圓餅圖色系
 const PIE_COLORS=['#78898B','#B88B8D','#8B9B82','#A18D95','#C9B6A1','#8E9EAB','#B5A69B','#95A5A6','#C2A3A3','#A3B2A1'];
 
 // --- 本地優先防護機制 ---
 let txs = JSON.parse(localStorage.getItem('my_txs') || '[]');
 let budgets = JSON.parse(localStorage.getItem('my_budgets') || '{}');
 let binId = localStorage.getItem('my_binId') || '';
+let unsubscribeSync = null; // 用來記錄 Firebase 的即時監聽器
 
 let currentType = 'expense';
 let curY = new Date().getFullYear();
@@ -614,6 +633,7 @@ function saveLocal() {
     localStorage.setItem('my_txs', JSON.stringify(txs)); 
     localStorage.setItem('my_budgets', JSON.stringify(budgets)); 
 }
+
 function toast(msg) { 
     const t = document.getElementById('toast'); 
     t.textContent = msg; 
@@ -621,13 +641,14 @@ function toast(msg) {
     setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
-// ── Sync (雲端同步 - 改用最穩定抗防毒的 kvdb.io) ──
+// ── Firebase Sync ──
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('syncDot');
   const status = document.getElementById('syncStatus');
-  dot.className = 'sync-dot ' + (state || 'ok');
-  status.textContent = msg;
+  if(dot) dot.className = 'sync-dot ' + (state || 'ok');
+  if(status) status.textContent = msg;
 }
+
 function updateSyncIdDisplay() {
   const el = document.getElementById('syncIdDisplay');
   if(binId) { el.textContent = '已連接雲端'; el.title = binId; }
@@ -636,90 +657,90 @@ function updateSyncIdDisplay() {
 
 async function pushToCloud() {
   if(!binId) return;
-  setSyncStatus('loading', '雲端儲存中...');
+  setSyncStatus('loading', '雲端同步中...');
   try {
-    const res = await fetch(`https://kvdb.io/${binId}/data`, {
-      method: 'POST',
-      body: JSON.stringify({ txs, budgets })
-    });
-    if(!res.ok) throw new Error(res.status);
-    setSyncStatus('ok', '已安全同步');
+    await setDoc(doc(db, "ledgers", binId), { txs, budgets });
+    setSyncStatus('ok', '即時同步中');
   } catch(e) {
     setSyncStatus('err', '網路不穩，已暫存本地');
+    console.error("寫入 Firestore 失敗:", e);
   }
 }
 
-async function pullFromCloud() {
-  if(!binId) return false;
-  setSyncStatus('loading', '更新資料中...');
-  try {
-    const cacheBuster = new Date().getTime();
-    const res = await fetch(`https://kvdb.io/${binId}/data?_t=${cacheBuster}`);
-    if(!res.ok) throw new Error(res.status);
-    const data = await res.json();
-    
-    if(data && Array.isArray(data.txs)) {
-      txs = data.txs;
-      budgets = data.budgets || {};
-      saveLocal(); 
+// 開啟 Firebase 即時監聽魔法！
+function setupRealtimeSync() {
+  if (!binId) return;
+  if (unsubscribeSync) unsubscribeSync(); // 清除舊的監聽
+  
+  setSyncStatus('loading', '連線中...');
+  
+  unsubscribeSync = onSnapshot(doc(db, "ledgers", binId), (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if(data && Array.isArray(data.txs)) {
+        // 只要資料庫一有變動，就會立刻跑到這裡更新畫面！
+        txs = data.txs;
+        budgets = data.budgets || {};
+        saveLocal(); 
+        renderAll();
+      }
+      setSyncStatus('ok', '即時同步中');
+    } else {
+      setSyncStatus('err', '找不到此空間庫');
     }
-    
-    setSyncStatus('ok', '資料已是最新');
-    return true;
-  } catch(e) {
-    setSyncStatus('err', '無法連線，使用本地資料');
-    return false;
-  }
+  }, (error) => {
+    console.error("監聽 Firestore 錯誤:", error);
+    setSyncStatus('err', '權限錯誤或連線中斷');
+  });
 }
 
-async function createBin() {
+window.createBin = async function() {
   setSyncStatus('loading', '建立空間中...');
   document.getElementById('syncMsg').textContent = '正在與伺服器連線...';
   try {
-    // 1. 建立 Bucket
-    const res = await fetch('https://kvdb.io', { method: 'POST' });
-    if(!res.ok) throw new Error(res.status);
-    const newBinId = await res.text();
-    
-    // 2. 初始化資料
-    await fetch(`https://kvdb.io/${newBinId}/data`, {
-      method: 'POST',
-      body: JSON.stringify({ txs, budgets })
-    });
+    // 產生一組長度 12 的亂數 ID
+    const newBinId = crypto.randomUUID().replace(/-/g, '').substring(0, 12); 
+    await setDoc(doc(db, "ledgers", newBinId), { txs, budgets });
     
     binId = newBinId; 
     localStorage.setItem('my_binId', binId);
     document.getElementById('binIdInput').value = binId;
-    document.getElementById('syncMsg').textContent = '✅ 建立成功！您可以複製上方的 ID 分享給家人。';
+    document.getElementById('syncMsg').innerHTML = '✅ 建立成功！<br>您可以複製上方的 ID 分享給家人。';
     
     updateSyncIdDisplay();
-    setSyncStatus('ok', '已連線雲端');
+    setupRealtimeSync(); // 啟動即時監聽
     toast('✅ 雲端空間建立成功');
   } catch(e) {
     setSyncStatus('err', '建立失敗');
-    document.getElementById('syncMsg').textContent = '❌ 建立失敗，請稍後再試';
+    document.getElementById('syncMsg').innerHTML = '❌ 建立失敗！<br>請確認 Firebase 的 Firestore 規則有設定為 allow read, write: if true;';
+    console.error("建立空間失敗:", e);
   }
 }
 
-async function connectBin() {
+window.connectBin = async function() {
   const id = document.getElementById('binIdInput').value.trim();
   if(!id) { toast('請輸入 ID'); return; }
   
-  // 自動濾除多餘的路徑，只留 ID
   const cleanId = id.split('/').pop();
-  
   binId = cleanId;
   localStorage.setItem('my_binId', binId);
   updateSyncIdDisplay();
   document.getElementById('syncMsg').textContent = '讀取資料中...';
   
-  const ok = await pullFromCloud();
-  if(ok) {
-    document.getElementById('syncMsg').textContent = '✅ 連接成功！資料已下載。';
-    renderAll();
-    toast('✅ 資料同步完成');
-  } else {
-    document.getElementById('syncMsg').textContent = '❌ 連接失敗，請檢查 ID 是否正確或網路狀態';
+  try {
+    const docSnap = await getDoc(doc(db, "ledgers", binId));
+    if (docSnap.exists()) {
+       document.getElementById('syncMsg').textContent = '✅ 連接成功！資料自動即時同步中。';
+       setupRealtimeSync();
+       toast('✅ 資料同步完成');
+    } else {
+       document.getElementById('syncMsg').textContent = '❌ 連接失敗，找不到這個 ID 的資料';
+       setSyncStatus('err', '找不到資料庫');
+    }
+  } catch(e) {
+     document.getElementById('syncMsg').textContent = '❌ 連接失敗，請檢查 Firebase 權限設定或網路';
+     setSyncStatus('err', '連接失敗');
+     console.error(e);
   }
 }
 
@@ -953,14 +974,12 @@ document.getElementById('txDate').value = new Date().toISOString().split('T')[0]
 rebuildCatSelect();
 rebuildBudgetCatSelect();
 
-// 第一時間立刻用本地資料渲染畫面，不等待網路！
+// 1. 第一時間立刻用本地資料渲染畫面
 renderAll();
 
-// 如果有設定雲端 ID，在背景偷偷更新資料
+// 2. 如果有設定雲端 ID，啟動 Firebase 即時監聽
 if(binId) {
-  pullFromCloud().then(ok => {
-    if(ok) renderAll();
-  });
+  setupRealtimeSync();
 }
 </script>
 </body>
