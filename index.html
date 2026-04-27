@@ -550,7 +550,7 @@ body{
     <div class="card">
       <div class="card-title">雲端同步空間</div>
       <p class="export-desc">
-        使用開放式穩定雲端服務（不需註冊，不易被阻擋）。<br>
+        使用開放式極速儲存庫 <strong>kvdb.io</strong> (免註冊、最穩定、不被阻擋)。<br>
         點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機即可跨裝置同步。
       </p>
       <div class="sync-setup">
@@ -621,7 +621,7 @@ function toast(msg) {
     setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
-// ── Sync (雲端同步 - 改用不會被阻擋的 npoint.io) ──
+// ── Sync (雲端同步 - 改用最穩定抗防毒的 kvdb.io) ──
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('syncDot');
   const status = document.getElementById('syncStatus');
@@ -638,9 +638,8 @@ async function pushToCloud() {
   if(!binId) return;
   setSyncStatus('loading', '雲端儲存中...');
   try {
-    const res = await fetch(`https://api.npoint.io/${binId}`, {
+    const res = await fetch(`https://kvdb.io/${binId}/data`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ txs, budgets })
     });
     if(!res.ok) throw new Error(res.status);
@@ -655,9 +654,7 @@ async function pullFromCloud() {
   setSyncStatus('loading', '更新資料中...');
   try {
     const cacheBuster = new Date().getTime();
-    const res = await fetch(`https://api.npoint.io/${binId}?_t=${cacheBuster}`, {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
+    const res = await fetch(`https://kvdb.io/${binId}/data?_t=${cacheBuster}`);
     if(!res.ok) throw new Error(res.status);
     const data = await res.json();
     
@@ -679,15 +676,18 @@ async function createBin() {
   setSyncStatus('loading', '建立空間中...');
   document.getElementById('syncMsg').textContent = '正在與伺服器連線...';
   try {
-    const res = await fetch('https://api.npoint.io', {
+    // 1. 建立 Bucket
+    const res = await fetch('https://kvdb.io', { method: 'POST' });
+    if(!res.ok) throw new Error(res.status);
+    const newBinId = await res.text();
+    
+    // 2. 初始化資料
+    await fetch(`https://kvdb.io/${newBinId}/data`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ txs, budgets })
     });
-    if(!res.ok) throw new Error(res.status);
-    const data = await res.json();
     
-    binId = data.id; // npoint回傳的是id
+    binId = newBinId; 
     localStorage.setItem('my_binId', binId);
     document.getElementById('binIdInput').value = binId;
     document.getElementById('syncMsg').textContent = '✅ 建立成功！您可以複製上方的 ID 分享給家人。';
@@ -705,7 +705,10 @@ async function connectBin() {
   const id = document.getElementById('binIdInput').value.trim();
   if(!id) { toast('請輸入 ID'); return; }
   
-  binId = id;
+  // 自動濾除多餘的路徑，只留 ID
+  const cleanId = id.split('/').pop();
+  
+  binId = cleanId;
   localStorage.setItem('my_binId', binId);
   updateSyncIdDisplay();
   document.getElementById('syncMsg').textContent = '讀取資料中...';
