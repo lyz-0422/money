@@ -10,28 +10,28 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   /* 莫蘭迪色系調色盤 */
-  --paper: #F3F1EC;       /* 燕麥米色 (主背景) */
-  --paper2: #EBE7E0;      /* 稍深的米色 (側邊欄/卡片) */
-  --paper3: #DFDCD4;      /* 懸停與選取狀態 */
+  --paper: #F3F1EC;       
+  --paper2: #EBE7E0;      
+  --paper3: #DFDCD4;      
   
-  --ink: #5C5A55;         /* 柔和深灰褐 (主文字) */
-  --ink2: #7A7873;        /* 次要文字 */
-  --ink3: #9C9A94;        /* 備註與標籤 */
-  --ink4: #BDBBB5;        /* 邊框與禁用狀態 */
+  --ink: #5C5A55;         
+  --ink2: #7A7873;        
+  --ink3: #9C9A94;        
+  --ink4: #BDBBB5;        
   
-  --accent: #78898B;      /* 莫蘭迪灰藍綠 (主色調) */
-  --accent2: #92A3A5;     /* 亮灰藍綠 */
-  --accent3: #D0D6D6;     /* 極淡灰藍綠 (按鈕懸停) */
+  --accent: #78898B;      
+  --accent2: #92A3A5;     
+  --accent3: #D0D6D6;     
   
-  --income: #8B9B82;      /* 莫蘭迪灰綠 (收入) */
+  --income: #8B9B82;      
   --income-bg: #E3E7E1;
-  --expense: #B88B8D;     /* 莫蘭迪藕粉 (支出) */
+  --expense: #B88B8D;     
   --expense-bg: #EBE0E1;
   
   --border: #D8D5CD;
   --border2: #C4C1B9;
   
-  --r: 12px;              /* 更加圓潤的邊角 */
+  --r: 12px;              
   --r2: 18px;
   --shadow: 0 6px 16px rgba(92, 90, 85, 0.06);
 }
@@ -137,13 +137,6 @@ body{
 .sync-dot.err{background:var(--expense)}
 .sync-dot.loading{background:var(--accent2);animation:pulse .8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.sync-id{
-  font-family:'Quicksand',monospace;font-size:11px;font-weight:600;
-  background:var(--paper);border:1px solid var(--border);
-  border-radius:6px;padding:2px 6px;color:var(--ink2);
-  cursor:pointer;transition:all .2s;
-}
-.sync-id:hover{border-color:var(--accent2);color:var(--ink)}
 
 /* ─── Main ─── */
 .main{overflow-y:auto;padding:0 1.75rem 1.5rem}
@@ -333,32 +326,6 @@ body{
 }
 .btn-sm:hover{background:var(--paper3);border-color:var(--accent)}
 
-/* ─── Sync/Export ─── */
-.export-desc{font-size:13px;color:var(--ink2);line-height:1.8;margin-bottom:1rem}
-.export-opts{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-@media(max-width:480px){.export-opts{grid-template-columns:1fr}}
-.export-card{
-  background:var(--paper);border:1px solid var(--border);
-  border-radius:var(--r);padding:1.25rem;cursor:pointer;transition:all .2s;
-}
-.export-card:hover{border-color:var(--accent);background:var(--paper2);transform:translateY(-2px);box-shadow: 0 4px 12px rgba(120, 137, 139, 0.1)}
-.export-card-title{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:6px;color:var(--ink)}
-.export-card-desc{font-size:12px;color:var(--ink3)}
-
-.sync-setup{
-  background:var(--paper);border:1px solid var(--border);
-  border-radius:var(--r);padding:1.25rem;margin-top:.75rem;
-}
-.sync-setup-title{font-family:'Noto Serif TC',serif;font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:.5rem;color:var(--ink)}
-.sync-input-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
-.sync-input-row input{
-  flex:1;min-width:180px;padding:9px 12px;font-size:13px;
-  font-family:'Quicksand',monospace;
-  border:1px solid var(--border);border-radius:var(--r);
-  background:var(--paper2);color:var(--ink);outline:none;
-}
-.sync-input-row input:focus{border-color:var(--accent);background:#fff;}
-
 /* ─── Toast ─── */
 .toast{
   position:fixed;bottom:2rem;left:50%;
@@ -404,9 +371,6 @@ body{
     <div class="nav-item" onclick="gotoPage('budget',this)">
       <span class="nav-icon">🎯</span>預算設定
     </div>
-    <div class="nav-item" onclick="gotoPage('sync',this)">
-      <span class="nav-icon">☁️</span>同步與備份
-    </div>
   </nav>
   <div class="month-nav">
     <div class="month-title" id="sideMonthLabel">月份</div>
@@ -421,9 +385,8 @@ body{
 <!-- Main -->
 <main class="main">
   <div class="sync-bar">
-    <div class="sync-dot ok" id="syncDot"></div>
-    <span id="syncStatus">本地安全儲存中</span>
-    <span class="sync-id" id="syncIdDisplay" onclick="gotoPage('sync',document.querySelector('.nav-item:nth-child(5)'))"></span>
+    <div class="sync-dot loading" id="syncDot"></div>
+    <span id="syncStatus">雲端連線中...</span>
   </div>
 
   <!-- Dashboard -->
@@ -540,61 +503,18 @@ body{
     </div>
   </div>
 
-  <!-- Sync -->
-  <div class="page" id="page-sync">
-    <div class="page-header">
-      <h1>同步與備份</h1>
-      <span class="subtitle">DATA SYNC</span>
-    </div>
-    
-    <div class="card">
-      <div class="card-title">雲端同步空間</div>
-      <p class="export-desc">
-        使用您的專屬 <strong>Firebase 即時資料庫</strong>。<br>
-        點擊下方按鈕建立空間，將產生的 ID 分享給另一支手機，即可跨裝置自動即時同步。
-      </p>
-      <div class="sync-setup">
-        <div class="sync-setup-title">目前的同步 ID</div>
-        <div class="sync-input-row">
-          <input type="text" id="binIdInput" placeholder="貼上空間 ID..." spellcheck="false">
-          <button class="btn-sm" onclick="connectBin()">連 接</button>
-          <button class="btn-sm" onclick="createBin()" style="background:var(--accent);color:var(--paper);border-color:var(--accent)">建立新的</button>
-        </div>
-        <div id="syncMsg" style="margin-top:.85rem;font-size:12px;color:var(--ink3);font-weight:500;"></div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:1.5rem">
-      <div class="card-title">手動備份資料</div>
-      <div class="export-opts">
-        <div class="export-card" onclick="exportCSV('month')">
-          <div class="export-card-title">📅 匯出本月 (CSV)</div>
-          <div class="export-card-desc">匯出可在 Excel 開啟的本月表格</div>
-        </div>
-        <div class="export-card" onclick="exportCSV('all')">
-          <div class="export-card-title">📦 匯出全部 (CSV)</div>
-          <div class="export-card-desc">匯出所有月份的完整記錄</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:1.5rem; border-color: rgba(184,139,141,0.4); background: rgba(235,224,225,0.3);">
-      <div class="card-title" style="color: var(--expense);">危險區域</div>
-      <button class="btn-sm" onclick="clearAll()" style="color:var(--expense);border-color:var(--expense);width:100%;background:white;">清除所有本地資料</button>
-    </div>
-  </div>
-
 </main>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- 關鍵：改成 module 並載入 Firebase SDK -->
+<!-- 載入 Firebase 官方 SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// --- 你的專屬 Firebase 設定 ---
+// --- 你的 Firebase 設定 ---
 const firebaseConfig = {
   apiKey: "AIzaSyAcz6x6OZ0zFe24lvDsCLslO3dgCuUQGFE",
   authDomain: "money-8f158.firebaseapp.com",
@@ -605,9 +525,12 @@ const firebaseConfig = {
   measurementId: "G-4NTEPXYXLS"
 };
 
-// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// 固定資料庫路徑：所有人打開網頁都會自動寫入這裡，不需設定 ID！
+const familyDocRef = doc(db, 'artifacts', 'money-8f158', 'public', 'data', 'family_ledger', 'main');
 
 // --- 基礎設定 ---
 const CATS_EXP=['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
@@ -616,11 +539,9 @@ const CAT_ICON={餐飲:'🍜',交通:'🚌',購物:'🛍',娛樂:'🎮',醫療:'
 
 const PIE_COLORS=['#78898B','#B88B8D','#8B9B82','#A18D95','#C9B6A1','#8E9EAB','#B5A69B','#95A5A6','#C2A3A3','#A3B2A1'];
 
-// --- 本地優先防護機制 ---
 let txs = JSON.parse(localStorage.getItem('my_txs') || '[]');
 let budgets = JSON.parse(localStorage.getItem('my_budgets') || '{}');
-let binId = localStorage.getItem('my_binId') || '';
-let unsubscribeSync = null; // 用來記錄 Firebase 的即時監聽器
+let isFirebaseReady = false;
 
 let currentType = 'expense';
 let curY = new Date().getFullYear();
@@ -641,7 +562,6 @@ function toast(msg) {
     setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
-// ── Firebase Sync ──
 function setSyncStatus(state, msg) {
   const dot = document.getElementById('syncDot');
   const status = document.getElementById('syncStatus');
@@ -649,98 +569,59 @@ function setSyncStatus(state, msg) {
   if(status) status.textContent = msg;
 }
 
-function updateSyncIdDisplay() {
-  const el = document.getElementById('syncIdDisplay');
-  if(binId) { el.textContent = '已連接雲端'; el.title = binId; }
-  else { el.textContent = ''; el.title = ''; }
-}
-
-async function pushToCloud() {
-  if(!binId) return;
-  setSyncStatus('loading', '雲端同步中...');
-  try {
-    await setDoc(doc(db, "ledgers", binId), { txs, budgets });
-    setSyncStatus('ok', '即時同步中');
-  } catch(e) {
-    setSyncStatus('err', '網路不穩，已暫存本地');
-    console.error("寫入 Firestore 失敗:", e);
-  }
-}
-
-// 開啟 Firebase 即時監聽魔法！
+// ── 啟動 Firebase 認證與即時監聽 ──
 function setupRealtimeSync() {
-  if (!binId) return;
-  if (unsubscribeSync) unsubscribeSync(); // 清除舊的監聽
-  
-  setSyncStatus('loading', '連線中...');
-  
-  unsubscribeSync = onSnapshot(doc(db, "ledgers", binId), (docSnap) => {
+  isFirebaseReady = true;
+  // 設定即時監聽：一有變動，這段程式碼就會被觸發！
+  onSnapshot(familyDocRef, (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if(data && Array.isArray(data.txs)) {
-        // 只要資料庫一有變動，就會立刻跑到這裡更新畫面！
-        txs = data.txs;
-        budgets = data.budgets || {};
-        saveLocal(); 
-        renderAll();
-      }
-      setSyncStatus('ok', '即時同步中');
+      txs = data.txs || [];
+      budgets = data.budgets || {};
+      saveLocal(); 
+      renderAll();
+      setSyncStatus('ok', '雲端即時同步中 ✨');
     } else {
-      setSyncStatus('err', '找不到此空間庫');
+      // 如果是全新的一本帳本，幫它初始化
+      setDoc(familyDocRef, { txs: txs, budgets: budgets }).catch(e => console.error(e));
     }
   }, (error) => {
-    console.error("監聽 Firestore 錯誤:", error);
-    setSyncStatus('err', '權限錯誤或連線中斷');
+    console.error("Firestore 監聽失敗 (可能是權限規則沒開):", error);
+    setSyncStatus('err', '權限錯誤，請檢查 Firebase 後台 Rules');
+    toast("⚠️ 無法寫入雲端，請確認已修改 Firebase 權限！");
   });
 }
 
-window.createBin = async function() {
-  setSyncStatus('loading', '建立空間中...');
-  document.getElementById('syncMsg').textContent = '正在與伺服器連線...';
+async function initFirebase() {
   try {
-    // 產生一組長度 12 的亂數 ID
-    const newBinId = crypto.randomUUID().replace(/-/g, '').substring(0, 12); 
-    await setDoc(doc(db, "ledgers", newBinId), { txs, budgets });
-    
-    binId = newBinId; 
-    localStorage.setItem('my_binId', binId);
-    document.getElementById('binIdInput').value = binId;
-    document.getElementById('syncMsg').innerHTML = '✅ 建立成功！<br>您可以複製上方的 ID 分享給家人。';
-    
-    updateSyncIdDisplay();
-    setupRealtimeSync(); // 啟動即時監聽
-    toast('✅ 雲端空間建立成功');
-  } catch(e) {
-    setSyncStatus('err', '建立失敗');
-    document.getElementById('syncMsg').innerHTML = '❌ 建立失敗！<br>請確認 Firebase 的 Firestore 規則有設定為 allow read, write: if true;';
-    console.error("建立空間失敗:", e);
+    await signInAnonymously(auth);
+  } catch (error) {
+    console.error("Firebase 登入失敗:", error);
+    if (error.code === 'auth/configuration-not-found') {
+      console.warn("您尚未在 Firebase 開啟「匿名登入」，已自動切換為無驗證直接連線...");
+      setupRealtimeSync(); // 降級為免驗證直接連線
+    } else {
+      setSyncStatus('err', '網路異常，目前為本地單機模式');
+    }
   }
 }
 
-window.connectBin = async function() {
-  const id = document.getElementById('binIdInput').value.trim();
-  if(!id) { toast('請輸入 ID'); return; }
-  
-  const cleanId = id.split('/').pop();
-  binId = cleanId;
-  localStorage.setItem('my_binId', binId);
-  updateSyncIdDisplay();
-  document.getElementById('syncMsg').textContent = '讀取資料中...';
-  
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    setupRealtimeSync();
+  }
+});
+
+async function pushToCloud() {
+  if (!isFirebaseReady) return;
+  setSyncStatus('loading', '資料上傳中...');
   try {
-    const docSnap = await getDoc(doc(db, "ledgers", binId));
-    if (docSnap.exists()) {
-       document.getElementById('syncMsg').textContent = '✅ 連接成功！資料自動即時同步中。';
-       setupRealtimeSync();
-       toast('✅ 資料同步完成');
-    } else {
-       document.getElementById('syncMsg').textContent = '❌ 連接失敗，找不到這個 ID 的資料';
-       setSyncStatus('err', '找不到資料庫');
-    }
+    await setDoc(familyDocRef, { txs, budgets });
+    setSyncStatus('ok', '雲端即時同步中 ✨');
   } catch(e) {
-     document.getElementById('syncMsg').textContent = '❌ 連接失敗，請檢查 Firebase 權限設定或網路';
-     setSyncStatus('err', '連接失敗');
-     console.error(e);
+    console.error("寫入 Firestore 失敗:", e);
+    setSyncStatus('err', '連線不穩，已暫存本地');
+    toast("⚠️ 上傳失敗，請確認已修改 Firebase 權限！");
   }
 }
 
@@ -821,29 +702,6 @@ window.saveBudget = async function() {
   renderBudget();
   toast('✅ 預算已儲存');
   await pushToCloud();
-}
-
-window.clearAll = async function() {
-  if(!confirm('確定要清除所有本地資料嗎？此操作無法復原！\n(如果有連接雲端，雲端資料也會一併清空)')) return;
-  txs = []; 
-  budgets = {}; 
-  saveLocal();
-  renderAll();
-  toast('🗑️ 已清除所有資料');
-  await pushToCloud();
-}
-
-window.exportCSV = function(scope) {
-  const data = scope === 'all' ? txs : monthTxs();
-  if(!data.length) { toast('沒有資料可匯出'); return; }
-  const header = '日期,類型,名稱,金額,分類,備註';
-  const rows = data.map(t => [t.date, t.type === 'income' ? '收入' : '支出', '"'+t.name+'"', t.amount, t.cat, '"'+(t.note||'')+'"'].join(','));
-  const csv = '\uFEFF' + header + '\n' + rows.join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = '手帳記帳_' + (scope === 'all' ? '全部' : curY + '_' + (curM+1) + '月') + '.csv';
-  a.click();
-  toast('📥 CSV 已下載');
 }
 
 function renderDashboard() {
@@ -954,19 +812,11 @@ function renderBudget() {
   document.getElementById('budgetGrid').innerHTML = rows.join('');
 }
 
-function renderSync() {
-  if(binId) {
-    document.getElementById('binIdInput').value = binId;
-  }
-}
-
 function renderAll() {
   updateMonthLabel();
-  updateSyncIdDisplay();
   renderDashboard();
   renderChart();
   renderBudget();
-  renderSync();
 }
 
 // Init (系統啟動)
@@ -974,13 +824,12 @@ document.getElementById('txDate').value = new Date().toISOString().split('T')[0]
 rebuildCatSelect();
 rebuildBudgetCatSelect();
 
-// 1. 第一時間立刻用本地資料渲染畫面
+// 第一時間立刻用本地資料渲染畫面
 renderAll();
 
-// 2. 如果有設定雲端 ID，啟動 Firebase 即時監聽
-if(binId) {
-  setupRealtimeSync();
-}
+// 啟動 Firebase 雲端引擎
+initFirebase();
+
 </script>
 </body>
 </html>
