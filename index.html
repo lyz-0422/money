@@ -535,8 +535,8 @@ const analytics = getAnalytics(app); // 啟動 Google Analytics
 const db = getDatabase(app); // 使用 Realtime Database
 const auth = getAuth(app);
 
-// 設定 Realtime Database 路徑參考 (使用 ref)
-const familyDbRef = ref(db, 'artifacts/money-8f158/public/data/family_ledger/main');
+// 設定 Realtime Database 路徑參考 (使用 ref) - 已大幅簡化
+const familyDbRef = ref(db, 'family_ledger');
 
 // --- 基礎設定 ---
 const CATS_EXP=['餐飲','交通','購物','娛樂','醫療','住宿','教育','其他'];
