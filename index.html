@@ -247,13 +247,13 @@
 
         // ==========================================
         // 🔑 管理員設定區 (長輩不需要動這裡)
-        // 將你產生的金鑰貼在下方引號內
+        // 第一次使用請保持空白 ""，系統會自動生成並告訴你貼什麼！
         // ==========================================
-        const FAMILY_ID = "535b3f65-5e7c-4b8f-9f91-ad7317e004d2"; 
+        const FAMILY_ID = ""; 
         
 
-        // --- 1. 雲端通訊功能 (改用穩定且允許匿名更新的 JSONBlob) ---
-        const BLOB_API = "https://jsonblob.com/api/jsonBlob";
+        // --- 1. 雲端通訊功能 (更換為最強防護、不易被阻擋的 KVDB 引擎) ---
+        const KVDB_API = "https://kvdb.io";
         let records = [];
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -275,37 +275,27 @@
         async function pushToCloud(data) {
             if (!FAMILY_ID) return;
             try {
-                await fetch(`${BLOB_API}/${FAMILY_ID.trim()}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json' 
-                    },
-                    body: JSON.stringify({ records: data })
+                await fetch(`${KVDB_API}/${FAMILY_ID.trim()}/records`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
                 });
             } catch (e) {
                 console.error("同步儲存失敗", e);
-                throw e; // 拋出錯誤以便處理
+                throw e; 
             }
         }
 
         async function pullFromCloud() {
             if (!FAMILY_ID) return null;
             try {
-                // [關鍵修復] 加入快取破壞參數 (?_t=...) 以及快取控制，避免瀏覽器讀取到舊的暫存資料
-                const res = await fetch(`${BLOB_API}/${FAMILY_ID.trim()}?_t=${new Date().getTime()}`, {
+                // 加入時間戳參數，徹底打破瀏覽器的偷懶快取機制
+                const res = await fetch(`${KVDB_API}/${FAMILY_ID.trim()}/records?_t=${new Date().getTime()}`, {
                     method: 'GET',
-                    headers: { 
-                        'Accept': 'application/json',
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    },
                     cache: 'no-store'
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    return data.records || [];
+                    return data || [];
                 }
             } catch (e) {
                 console.error("雲端載入失敗", e);
@@ -316,21 +306,21 @@
         // 自動為管理者建立資料庫的精靈
         async function autoSetupDB() {
             try {
-                const res = await fetch(BLOB_API, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                    body: JSON.stringify({ records: [] })
-                });
-                const location = res.headers.get("Location");
-                if (location) {
-                    const newId = location.split('/').pop();
+                const res = await fetch(KVDB_API, { method: "POST" });
+                if (res.ok) {
+                    const newId = await res.text();
                     document.getElementById('setup-overlay').classList.remove('hidden');
                     document.getElementById('setup-id').value = newId;
                 } else {
-                    alert("無法獲取 ID，請確認您的網路連線或使用無痕模式重試。");
+                    throw new Error("API 發生例外狀況");
                 }
             } catch(e) {
-                alert("建立資料庫失敗，請稍後再試。");
+                // 移除可怕的 alert 視窗，改用漂亮的介面告知被擋住了
+                document.getElementById('setup-overlay').classList.remove('hidden');
+                document.querySelector('#setup-overlay h3').innerHTML = '⚠️ 連線被阻擋了';
+                document.querySelector('#setup-overlay p').innerHTML = '建立專屬空間失敗！<br><br>這通常是因為瀏覽器的<b>廣告阻擋外掛 (AdBlock)</b> 或<b>防毒軟體</b>攔截了連線。<br><br>👉 解決方法：<br>1. 暫時關閉廣告阻擋器。<br>2. 換一個瀏覽器（例如 Edge 或 Safari）。<br>3. 用手機分享 4G 網路再試一次！';
+                document.getElementById('setup-id').style.display = 'none';
+                document.querySelector('#setup-overlay button').style.display = 'none';
             }
         }
 
