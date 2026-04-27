@@ -508,9 +508,11 @@ body{
 
 <div class="toast" id="toast"></div>
 
-<!-- 載入 Firebase 官方 SDK -->
+<!-- 載入 Firebase 官方 SDK (使用 CDN 網址) -->
 <script type="module">
+// 從 CDN 引入模組，這是在瀏覽器直接跑 HTML 必須的作法
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
@@ -518,6 +520,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 const firebaseConfig = {
   apiKey: "AIzaSyAcz6x6OZ0zFe24lvDsCLslO3dgCuUQGFE",
   authDomain: "money-8f158.firebaseapp.com",
+  databaseURL: "https://money-8f158-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "money-8f158",
   storageBucket: "money-8f158.firebasestorage.app",
   messagingSenderId: "440960174909",
@@ -525,7 +528,9 @@ const firebaseConfig = {
   measurementId: "G-4NTEPXYXLS"
 };
 
+// 初始化 Firebase 與各項服務
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app); // 啟動 Google Analytics
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -551,15 +556,15 @@ const fmt = n => 'NT$' + Math.round(Math.abs(n)).toLocaleString();
 function monthTxs(y, m) { return txs.filter(t => { const d = new Date(t.date); return d.getFullYear() === (y ?? curY) && d.getMonth() === (m ?? curM) }) }
 
 function saveLocal() { 
-    localStorage.setItem('my_txs', JSON.stringify(txs)); 
-    localStorage.setItem('my_budgets', JSON.stringify(budgets)); 
+  localStorage.setItem('my_txs', JSON.stringify(txs)); 
+  localStorage.setItem('my_budgets', JSON.stringify(budgets)); 
 }
 
 function toast(msg) { 
-    const t = document.getElementById('toast'); 
-    t.textContent = msg; 
-    t.classList.add('show'); 
-    setTimeout(() => t.classList.remove('show'), 2500); 
+  const t = document.getElementById('toast'); 
+  t.textContent = msg; 
+  t.classList.add('show'); 
+  setTimeout(() => t.classList.remove('show'), 2500); 
 }
 
 function setSyncStatus(state, msg) {
@@ -597,7 +602,7 @@ async function initFirebase() {
     await signInAnonymously(auth);
   } catch (error) {
     console.error("Firebase 登入失敗:", error);
-    if (error.code === 'auth/configuration-not-found') {
+    if (error.code === 'auth/configuration-not-found' || error.code === 'auth/admin-restricted-operation') {
       console.warn("您尚未在 Firebase 開啟「匿名登入」，已自動切換為無驗證直接連線...");
       setupRealtimeSync(); // 降級為免驗證直接連線
     } else {
